@@ -193,7 +193,7 @@ def main():
         for geek in listOfGeeks:
             if pygame.Rect.colliderect(ball.getRect(), geek.getRect()):
                 ball.hit()
-
+        
         if num_2 > num_1:
             geek2YFac = 1
         elif num_2 < num_1:
