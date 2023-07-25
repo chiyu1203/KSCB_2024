@@ -130,10 +130,10 @@ def main():
     geek1 = Striker(20, 0, 10, 100, 10, GREEN)
     geek2 = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
     ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 7, WHITE)
-    ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 10, RED)
+    if use_ball2 == True:
+        ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 10, RED)
 
     listOfGeeks = [geek1, geek2]
-
     # Initial parameters of the players
     geek1Score, geek2Score = 0, 0
     geek1YFac, geek2YFac = 0, 0
@@ -171,7 +171,6 @@ def main():
         ##AI PC
         if ball.posy > geek1.posy and abs(ball.posy - geek1.posy) > 10:
             geek1YFac = 1
-            # print(ball.posy, geek1.posy)
         if ball.posy < geek1.posy and abs(ball.posy - geek1.posy) > 10:
             geek1YFac = -1
 
@@ -183,35 +182,37 @@ def main():
 
         geek1.update(geek1YFac)
         geek2.update(geek2YFac)
-        point = ball.update()
-        point = ball2.update()
+        point1 = ball.update()
+        if use_ball2 == True:
+            point2 = ball2.update()
 
-        if point == -1:
+        if point1 == -1:
             geek1Score += 1
-        elif point == 1:
+        elif point1 == 1:
             geek2Score += 1
 
-        if point:
-            ball.reset()
-            ball2.reset()
+        if use_ball2 == True:
+            if point2 == -1:
+                geek1Score += 1
+            elif point2 == 1:
+                geek2Score += 1
 
         # Someone has scored
         # a point and the ball is out of bounds.
         # So, we reset it's position
-        # if point == 1 and ball.posx <= 0:
-        #     ball.reset()
-        # elif point == -1 and ball.posx >= WIDTH:
-        #     ball.reset()
-        # if point == 1 and ball2.posx <= 0:
-        #     ball2.reset()
-        # elif point == -1 and ball2.posx >= WIDTH:
-        #     ball2.reset()
+
+        if point1:
+            ball.reset()
+        if use_ball2 == True:
+            if point2:
+                ball2.reset()
 
         # Displaying the objects on the screen
         geek1.display()
         geek2.display()
         ball.display()
-        ball2.display()
+        if use_ball2 == True:
+            ball2.display()
 
         # Displaying the scores of the players
         geek1.displayScore("Konstanz Gamer : ", geek1Score, 100, 20, WHITE)
