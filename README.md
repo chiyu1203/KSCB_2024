@@ -5,3 +5,17 @@ The codes, are for educational purpose, in this demo use these tutorial as a bac
 https://www.geeksforgeeks.org/create-a-pong-game-in-python-pygame/
 
 https://pysource.com/2018/01/31/object-detection-using-hsv-color-space-opencv-3-4-with-python-3-tutorial-9/ 
+
+General anaconda environment for all setups and data analyses
+
+Install the latest anaconda version for your operating system (https://www.anaconda.com/products/individual).
+
+Open the anaconda prompt and create a virtual environment via conda
+
+conda create --name kscb_summer --channel conda-forge python=3.11
+conda activate kscb_summer
+conda update -n base -c defaults conda
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+conda install --yes -c conda-forge -v numpy opencv
+pip install pygame
