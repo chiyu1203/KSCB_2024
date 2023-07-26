@@ -102,14 +102,17 @@ class Ball:
         return self.ball
 
 
-def main():
+def main(game_modes):
     running = True
-    use_ball2 = False
 
     geek1 = Striker(20, 0, 10, 100, 10, GREEN)
     geek2 = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
     ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 3.5, WHITE)
-    ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED) if use_ball2 else None
+    ball2 = (
+        Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED)
+        if game_modes.get("two_balls")
+        else None
+    )
 
     list_of_geeks = [geek1, geek2]
     geek1_score, geek2_score = 0, 0
@@ -117,62 +120,122 @@ def main():
 
     while running:
         screen.fill(BLACK)
+        if game_modes.get("play_with_camera"):
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frame = cv2.resize(frame, (640, 480))
+            num_1 = color(frame, lower_range_1, upper_range_1)
+            num_2 = color(frame, lower_range_2, upper_range_2)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    geek2_y_fac = -1
-                if event.key == pygame.K_DOWN:
-                    geek2_y_fac = 1
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                    geek2_y_fac = 0
+        if (
+            game_modes.get("one_player") == True
+            and game_modes.get("play_with_camera") == True
+        ):
+            if num_2 > num_1:
+                geek2_y_fac = 1
+            elif num_2 < num_1:
+                geek2_y_fac = -1
+            else:
+                geek2_y_fac = 0
+            # AI PC
+            if ball.posy > geek1.posy and abs(ball.posy - geek1.posy) > 10:
+                geek1_y_fac = 1
+            elif ball.posy < geek1.posy and abs(ball.posy - geek1.posy) > 10:
+                geek1_y_fac = -1
 
+            if game_modes.get("two_balls"):
+                if ball2.posy > geek1.posy and abs(ball2.posy - geek1.posy) > 10:
+                    geek1_y_fac = 1
+                elif ball2.posy < geek1.posy and abs(ball2.posy - geek1.posy) > 10:
+                    geek1_y_fac = -1
+
+        elif (
+            game_modes.get("one_player") == False
+            and game_modes.get("play_with_camera") == True
+        ):
+            print("work in progress")
+            running = False
+        elif (
+            game_modes.get("one_player") == True
+            and game_modes.get("play_with_camera") == False
+        ):
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        geek2_y_fac = -1
+                    if event.key == pygame.K_DOWN:
+                        geek2_y_fac = 1
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                        geek2_y_fac = 0
+            # AI PC
+            if ball.posy > geek1.posy and abs(ball.posy - geek1.posy) > 10:
+                geek1_y_fac = 1
+            elif ball.posy < geek1.posy and abs(ball.posy - geek1.posy) > 10:
+                geek1_y_fac = -1
+
+            if game_modes.get("two_balls"):
+                if ball2.posy > geek1.posy and abs(ball2.posy - geek1.posy) > 10:
+                    geek1_y_fac = 1
+                elif ball2.posy < geek1.posy and abs(ball2.posy - geek1.posy) > 10:
+                    geek1_y_fac = -1
+        else:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        geek2_y_fac = -1
+                    if event.key == pygame.K_DOWN:
+                        geek2_y_fac = 1
+                    if event.key == pygame.K_w:
+                        geek1_y_fac = -1
+                    if event.key == pygame.K_s:
+                        geek1_y_fac = 1
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                        geek2_y_fac = 0
+                    if event.key == pygame.K_w or event.key == pygame.K_s:
+                        geek1_y_fac = 0
+        ##update the position of the paddles
+        geek1.update(geek1_y_fac)
+        geek2.update(geek2_y_fac)
+        ##collide rules of balls
         for geek in list_of_geeks:
             if pygame.Rect.colliderect(ball.get_rect(), geek.get_rect()):
                 ball.hit()
-            if use_ball2 and pygame.Rect.colliderect(ball2.get_rect(), geek.get_rect()):
+            if game_modes.get("two_balls") and pygame.Rect.colliderect(
+                ball2.get_rect(), geek.get_rect()
+            ):
                 ball2.hit()
 
-        # AI PC
-        if ball.posy > geek1.posy and abs(ball.posy - geek1.posy) > 10:
-            geek1_y_fac = 1
-        elif ball.posy < geek1.posy and abs(ball.posy - geek1.posy) > 10:
-            geek1_y_fac = -1
-
-        if use_ball2:
-            if ball2.posy > geek1.posy and abs(ball2.posy - geek1.posy) > 10:
-                geek1_y_fac = 1
-            elif ball2.posy < geek1.posy and abs(ball2.posy - geek1.posy) > 10:
-                geek1_y_fac = -1
-
-        geek1.update(geek1_y_fac)
-        geek2.update(geek2_y_fac)
+        ##update the position of the balls
         point1 = ball.update()
-        point2 = ball2.update() if use_ball2 else None
+        point2 = ball2.update() if game_modes.get("two_balls") else None
 
         if point1 == -1:
-            geek1_score += 1
-        elif point1 == 1:
             geek2_score += 1
+        elif point1 == 1:
+            geek1_score += 1
 
-        if use_ball2 and point2:
+        if game_modes.get("two_balls") and point2:
             if point2 == -1:
-                geek1_score += 1
-            elif point2 == 1:
                 geek2_score += 1
+            elif point2 == 1:
+                geek1_score += 1
 
         if point1:
             ball.reset()
-        if use_ball2 and point2:
+        if game_modes.get("two_balls") and point2:
             ball2.reset()
 
         geek1.display()
         geek2.display()
         ball.display()
-        if use_ball2:
+        if game_modes.get("two_balls"):
             ball2.display()
 
         geek1.display_score("Konstanz Gamer : ", geek1_score, 100, 20, WHITE)
@@ -183,5 +246,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    game_modes = {
+        "two_balls": True,
+        "one_player": False,
+        "play_with_camera": False,
+        "debug_mode": True,
+    }
+    main(game_modes)
     pygame.quit()
