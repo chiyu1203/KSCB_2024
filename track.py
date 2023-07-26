@@ -1,4 +1,3 @@
-import time
 import numpy as np
 import cv2
 
@@ -8,8 +7,8 @@ def nothing(x):
 
 
 def main():
-    cap = cv2.VideoCapture(0)
 
+    cap = cv2.VideoCapture(0)
     cv2.namedWindow("Trackbars")
     cv2.createTrackbar("L - H", "Trackbars", 0, 179, nothing)
     cv2.createTrackbar("L - S", "Trackbars", 0, 255, nothing)
@@ -17,7 +16,6 @@ def main():
     cv2.createTrackbar("U - H", "Trackbars", 179, 179, nothing)
     cv2.createTrackbar("U - S", "Trackbars", 255, 255, nothing)
     cv2.createTrackbar("U - V", "Trackbars", 255, 255, nothing)
-
     while True:
         ret, frame = cap.read()
         frame = cv2.resize(frame, (640, 480))
@@ -49,4 +47,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+     main()
