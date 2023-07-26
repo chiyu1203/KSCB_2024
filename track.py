@@ -2,7 +2,7 @@ import time
 import numpy as np
 import cv2
 
-
+def main():
 cap=cv2.VideoCapture(0)
 
 def nothing(x):
@@ -32,6 +32,7 @@ while True:
      u_h = cv2.getTrackbarPos("U - H", "Trackbars")
      u_s = cv2.getTrackbarPos("U - S", "Trackbars")
      u_v = cv2.getTrackbarPos("U - V", "Trackbars")
+     print(l_h)
      lower_blue = np.array([l_h, l_s, l_v])
      upper_blue = np.array([u_h, u_s, u_v])
      mask = cv2.inRange(hsv, lower_blue, upper_blue)
@@ -39,10 +40,13 @@ while True:
 
     # show thresholded image
      cv2.imshow("mask", mask)
-     cv2.imshow("result", result)  
+     cv2.imshow("result", result)
 
      key = cv2.waitKey(1) & 0xFF
      if key == ord("q"):
         break
+
 cap.release()
 cv2.destroyAllWindows()
+if __name__ == "__main__":
+    main()
