@@ -1,5 +1,20 @@
 import pygame
+import cv2
+import numpy as np
+from collections import deque
+# from track_chatGPT import color_check
+# lower_blue, upper_blue = color_check()
+# print(lower_blue, upper_blue)
+# lower_red, upper_red = color_check()
+# print(lower_red, upper_red)
+# lower_ranges = [np.array(lower_blue), np.array(lower_red)]
+# upper_ranges = [np.array(upper_blue), np.array(upper_red)]
 
+lower_ranges = [np.array([96, 91, 83]), np.array([ 0, 80,  0])]
+upper_ranges = [np.array([158, 255, 179]), np.array([78, 255, 179])]
+
+print(lower_ranges, upper_ranges)
+cap = cv2.VideoCapture(0)
 pygame.init()
 
 # Basic parameters of the screen
@@ -19,6 +34,8 @@ RED = pygame.Color(255, 0, 0)
 # Font that is used to render the text
 font20 = pygame.font.Font("freesansbold.ttf", 20)
 
+pts = deque(maxlen=32)
+counter=0
 
 class Striker:
     def __init__(self, posx, posy, width, height, speed, color):
@@ -142,14 +159,27 @@ def keyboard_controller2(event, pygame):
     return [y_fac, y_fac1]
 
 
-def camera_controller():
+def camera_controller(num_1,num_2):
+    y_fac=0
     if num_2 > num_1:
-        geek1_y_fac = 1
+        y_fac = 1
     elif num_2 < num_1:
-        geek1_y_fac = -1
+        y_fac = -1
     else:
-        geek1_y_fac = 0
-    return geek1_y_fac
+        y_fac = 0
+    return y_fac
+
+def camera_controller2(area_1,area_2):
+    y_fac=0
+    pts.appendleft((int(area_1),int(area_2)))
+
+    if num_2 > num_1:
+        y_fac = 1
+    elif num_2 < num_1:
+        y_fac = -1
+    else:
+        y_fac = 0
+    return y_fac
 
 
 def AI_controller(ball, geek):
@@ -160,6 +190,18 @@ def AI_controller(ball, geek):
         y_fac = -1
 
     return y_fac
+
+def color_track(img, lower_range, upper_range):
+    num_cnt = 0
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, lower_range, upper_range)
+    _, mask1 = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
+    cnts, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    for c in cnts:
+        x = 600
+        if cv2.contourArea(c) > x:
+            num_cnt += 1
+    return num_cnt
 
 
 def main(game_modes):
@@ -185,19 +227,18 @@ def main(game_modes):
             if not ret:
                 break
             frame = cv2.resize(frame, (640, 480))
-            num_1 = color(frame, lower_range_1, upper_range_1)
-            num_2 = color(frame, lower_range_2, upper_range_2)
+            num_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
+            num_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
 
         if (
             game_modes.get("one_player") == True
             and game_modes.get("play_with_camera") == True
         ):
-            if num_2 > num_1:
-                geek2_y_fac = 1
-            elif num_2 < num_1:
-                geek2_y_fac = -1
-            else:
-                geek2_y_fac = 0
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            
+            geek2_y_fac = camera_controller(num_1,num_2)
             # AI PC
             geek1_y_fac = AI_controller(ball, geek1)
             if game_modes.get(
@@ -299,9 +340,9 @@ def main(game_modes):
 
 if __name__ == "__main__":
     game_modes = {
-        "two_balls": True,
-        "one_player": False,
-        "play_with_camera": False,
+        "two_balls": False,
+        "one_player": True,
+        "play_with_camera": True,
         "debug_mode": True,
     }
     main(game_modes)
