@@ -3,12 +3,14 @@ import numpy as np
 from track import color_check
 lower_blue, upper_blue = color_check()
 print(lower_blue, upper_blue)
+lower_red, upper_red = color_check()
+print(lower_blue, upper_blue)
 cap=cv2.VideoCapture(0)
 
 lower_range_1=np.array(lower_blue)
 upper_range_1=np.array(upper_blue)
-lower_range_2=np.array([62,128,118])
-upper_range_2=np.array([119,255,255])
+lower_range_2=np.array(lower_red)
+upper_range_2=np.array(upper_red)
 
 def color(img,lr,ur):
     num_cnt = 0
