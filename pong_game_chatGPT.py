@@ -2,6 +2,7 @@ import pygame
 import cv2
 import numpy as np
 from collections import deque
+
 # from track_chatGPT import color_check
 # lower_blue, upper_blue = color_check()
 # print(lower_blue, upper_blue)
@@ -10,7 +11,7 @@ from collections import deque
 # lower_ranges = [np.array(lower_blue), np.array(lower_red)]
 # upper_ranges = [np.array(upper_blue), np.array(upper_red)]
 
-lower_ranges = [np.array([96, 91, 83]), np.array([ 0, 80,  0])]
+lower_ranges = [np.array([96, 91, 83]), np.array([0, 80, 0])]
 upper_ranges = [np.array([158, 255, 179]), np.array([78, 255, 179])]
 
 print(lower_ranges, upper_ranges)
@@ -35,7 +36,8 @@ RED = pygame.Color(255, 0, 0)
 font20 = pygame.font.Font("freesansbold.ttf", 20)
 
 pts = deque(maxlen=32)
-counter=0
+counter = 0
+
 
 class Striker:
     def __init__(self, posx, posy, width, height, speed, color):
@@ -159,8 +161,8 @@ def keyboard_controller2(event, pygame):
     return [y_fac, y_fac1]
 
 
-def camera_controller(num_1,num_2):
-    y_fac=0
+def camera_controller(num_1, num_2):
+    y_fac = 0
     if num_2 > num_1:
         y_fac = 1
     elif num_2 < num_1:
@@ -169,17 +171,38 @@ def camera_controller(num_1,num_2):
         y_fac = 0
     return y_fac
 
-def camera_controller2(area_1,area_2):
-    y_fac=0
-    pts.appendleft((int(area_1),int(area_2)))
 
-    if num_2 > num_1:
+def camera_controller2(area_1, area_2):
+    y_fac, y_fac1 = 0, 0
+    pts.appendleft((int(area_1), int(area_2)))
+    for i in np.arange(1, len(pts)):
+        # if either of the tracked points are None, ignore
+        # them
+        # print(bool(pts[i] is None))
+        if pts[i - 1] is None or pts[i] is None:
+            continue
+        # check to see if enough points have been accumulated in
+        # the buffer
+        if counter >= 10 and i == 1 and pts[-10] is not None:
+            # compute the difference between the x and y
+            # coordinates and re-initialize the direction
+            # text variables
+            darea_1 = pts[-10][0] - pts[i][0]
+            darea_2 = pts[-10][1] - pts[i][1]
+    if darea_1 > 0:
         y_fac = 1
-    elif num_2 < num_1:
+    elif darea_1 < 0:
         y_fac = -1
     else:
         y_fac = 0
-    return y_fac
+
+    if darea_2 > 0:
+        y_fac1 = 1
+    elif darea_2 < 0:
+        y_fac1 = -1
+    else:
+        y_fac1 = 0
+    return [y_fac, y_fac1]
 
 
 def AI_controller(ball, geek):
@@ -191,8 +214,10 @@ def AI_controller(ball, geek):
 
     return y_fac
 
+
 def color_track(img, lower_range, upper_range):
     num_cnt = 0
+    area = 0
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, lower_range, upper_range)
     _, mask1 = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
@@ -200,8 +225,9 @@ def color_track(img, lower_range, upper_range):
     for c in cnts:
         x = 600
         if cv2.contourArea(c) > x:
+            area += cv2.contourArea(c)
             num_cnt += 1
-    return num_cnt
+    return num_cnt, area
 
 
 def main(game_modes):
@@ -227,8 +253,8 @@ def main(game_modes):
             if not ret:
                 break
             frame = cv2.resize(frame, (640, 480))
-            num_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
-            num_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
+            num_1, area_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
+            num_2, area_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
 
         if (
             game_modes.get("one_player") == True
@@ -237,8 +263,8 @@ def main(game_modes):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-            
-            geek2_y_fac = camera_controller(num_1,num_2)
+
+            geek2_y_fac = camera_controller(num_1, num_2)
             # AI PC
             geek1_y_fac = AI_controller(ball, geek1)
             if game_modes.get(
@@ -250,8 +276,18 @@ def main(game_modes):
             game_modes.get("one_player") == False
             and game_modes.get("play_with_camera") == True
         ):
-            print("work in progress")
-            running = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    ## there is a bug here. Keyboard controller2 is not functioning
+                # geek2_y_fac = keyboard_controller(event, pygame)
+
+                # geek2_y_fac, geek1_y_fac = keyboard_controller2(event, pygame)
+                y_list = camera_controller2(area_1, area_2)
+                geek2_y_fac = y_list[0]
+                geek1_y_fac = y_list[1]
+            # print("work in progress")
+            # running = False
         elif (
             game_modes.get("one_player") == True
             and game_modes.get("play_with_camera") == False
