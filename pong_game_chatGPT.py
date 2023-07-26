@@ -102,6 +102,52 @@ class Ball:
         return self.ball
 
 
+def keyboard_controller(event, pygame):
+    y_fac = 0
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_UP:
+            y_fac = -1
+        if event.key == pygame.K_DOWN:
+            y_fac = 1
+    if event.type == pygame.KEYUP:
+        if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+            y_fac = 0
+    return y_fac
+
+
+def keyboard_controller2(event, pygame):
+    y_fac = 0
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_w:
+            y_fac = -1
+        if event.key == pygame.K_s:
+            y_fac = 1
+    if event.type == pygame.KEYUP:
+        if event.key == pygame.K_w or event.key == pygame.K_s:
+            y_fac = 0
+    return y_fac
+
+
+def camera_controller():
+    if num_2 > num_1:
+        geek1_y_fac = 1
+    elif num_2 < num_1:
+        geek1_y_fac = -1
+    else:
+        geek1_y_fac = 0
+    return geek1_y_fac
+
+
+def AI_controller(ball, geek):
+    y_fac = 0
+    if ball.posy > geek.posy and abs(ball.posy - geek.posy) > 10:
+        y_fac = 1
+    elif ball.posy < geek.posy and abs(ball.posy - geek.posy) > 10:
+        y_fac = -1
+
+    return y_fac
+
+
 def main(game_modes):
     running = True
 
@@ -139,16 +185,11 @@ def main(game_modes):
             else:
                 geek2_y_fac = 0
             # AI PC
-            if ball.posy > geek1.posy and abs(ball.posy - geek1.posy) > 10:
-                geek1_y_fac = 1
-            elif ball.posy < geek1.posy and abs(ball.posy - geek1.posy) > 10:
-                geek1_y_fac = -1
-
-            if game_modes.get("two_balls"):
-                if ball2.posy > geek1.posy and abs(ball2.posy - geek1.posy) > 10:
-                    geek1_y_fac = 1
-                elif ball2.posy < geek1.posy and abs(ball2.posy - geek1.posy) > 10:
-                    geek1_y_fac = -1
+            geek1_y_fac = AI_controller(ball, geek1)
+            if game_modes.get(
+                "two_balls"
+            ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
+                geek1_y_fac = AI_controller(ball2, geek1)
 
         elif (
             game_modes.get("one_player") == False
@@ -163,43 +204,36 @@ def main(game_modes):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        geek2_y_fac = -1
-                    if event.key == pygame.K_DOWN:
-                        geek2_y_fac = 1
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                        geek2_y_fac = 0
+                geek2_y_fac = keyboard_controller(event, pygame)
             # AI PC
-            if ball.posy > geek1.posy and abs(ball.posy - geek1.posy) > 10:
-                geek1_y_fac = 1
-            elif ball.posy < geek1.posy and abs(ball.posy - geek1.posy) > 10:
-                geek1_y_fac = -1
+            geek1_y_fac = AI_controller(ball, geek1)
+            if game_modes.get(
+                "two_balls"
+            ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
+                geek1_y_fac = AI_controller(ball2, geek1)
 
-            if game_modes.get("two_balls"):
-                if ball2.posy > geek1.posy and abs(ball2.posy - geek1.posy) > 10:
-                    geek1_y_fac = 1
-                elif ball2.posy < geek1.posy and abs(ball2.posy - geek1.posy) > 10:
-                    geek1_y_fac = -1
         else:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        geek2_y_fac = -1
-                    if event.key == pygame.K_DOWN:
-                        geek2_y_fac = 1
-                    if event.key == pygame.K_w:
-                        geek1_y_fac = -1
-                    if event.key == pygame.K_s:
-                        geek1_y_fac = 1
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                        geek2_y_fac = 0
-                    if event.key == pygame.K_w or event.key == pygame.K_s:
-                        geek1_y_fac = 0
+                    ## there is a bug here. Keyboard controller2 is not functioning
+                geek2_y_fac = keyboard_controller(event, pygame)
+                geek1_y_fac = keyboard_controller2(event, pygame)
+                print(geek1_y_fac)
+                # if event.type == pygame.KEYDOWN:
+                #     if event.key == pygame.K_UP:
+                #         geek2_y_fac = -1
+                #     if event.key == pygame.K_DOWN:
+                #         geek2_y_fac = 1
+                #     if event.key == pygame.K_w:
+                #         geek1_y_fac = -1
+                #     if event.key == pygame.K_s:
+                #         geek1_y_fac = 1
+                # if event.type == pygame.KEYUP:
+                #     if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                #         geek2_y_fac = 0
+                #     if event.key == pygame.K_w or event.key == pygame.K_s:
+                #         geek1_y_fac = 0
         ##update the position of the paddles
         geek1.update(geek1_y_fac)
         geek2.update(geek2_y_fac)
@@ -248,7 +282,7 @@ def main(game_modes):
 if __name__ == "__main__":
     game_modes = {
         "two_balls": True,
-        "one_player": False,
+        "one_player": True,
         "play_with_camera": False,
         "debug_mode": True,
     }
