@@ -6,7 +6,7 @@ def nothing(x):
     pass
 
 
-def main():
+def color_check():
     cap = cv2.VideoCapture(0)
 
     cv2.namedWindow("Trackbars")
@@ -49,6 +49,6 @@ def main():
 
 
 if __name__ == "__main__":
-    lower_blue, upper_blue = main()
+    lower_blue, upper_blue = color_check()
     print("Lower Blue:", lower_blue)
     print("Upper Blue:", upper_blue)
