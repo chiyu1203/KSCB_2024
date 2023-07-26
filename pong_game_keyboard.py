@@ -6,10 +6,10 @@ pygame.init()
 font20 = pygame.font.Font("freesansbold.ttf", 20)
 
 # RGB values of standard colors
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
+BLACK = pygame.Color(0, 0, 0)
+WHITE = pygame.Color(255, 255, 255)
+GREEN = pygame.Color(0, 255, 0)
+RED = pygame.Color(255, 0, 0)
 
 # Basic parameters of the screen
 WIDTH, HEIGHT = 900, 600
@@ -17,7 +17,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pong")
 
 clock = pygame.time.Clock()
-FPS = 30
+FPS = 60
 
 # Striker class
 
@@ -124,14 +124,14 @@ class Ball:
 
 def main():
     running = True
-    use_ball2 = True
+    use_ball2 = False
 
     # Defining the objects
     geek1 = Striker(20, 0, 10, 100, 10, GREEN)
     geek2 = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
-    ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 7, WHITE)
+    ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 3.5, WHITE)
     if use_ball2 == True:
-        ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 10, RED)
+        ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED)
 
     listOfGeeks = [geek1, geek2]
     # Initial parameters of the players
