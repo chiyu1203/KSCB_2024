@@ -14,7 +14,7 @@ from collections import deque
 lower_ranges = [np.array([96, 91, 83]), np.array([0, 80, 0])]
 upper_ranges = [np.array([158, 255, 179]), np.array([78, 255, 179])]
 
-#print(lower_ranges, upper_ranges)
+# print(lower_ranges, upper_ranges)
 cap = cv2.VideoCapture(0)
 pygame.init()
 
@@ -133,15 +133,16 @@ def keyboard_controller(event, pygame):
             y_fac = 0
     return y_fac
 
+
 def keyboard_controller2(event, pygame):
     y_fac = 0
     if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_w:
+        if event.key == pygame.K_LEFT:
             y_fac = -1
-        if event.key == pygame.K_s:
+        if event.key == pygame.K_RIGHT:
             y_fac = 1
     if event.type == pygame.KEYUP:
-        if event.key == pygame.K_w or event.key == pygame.K_s:
+        if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
             y_fac = 0
     return y_fac
 
@@ -161,14 +162,14 @@ def keyboard_controller3(event, pygame):
             y_fac = -1
         if event.key == pygame.K_DOWN:
             y_fac = 1
-        if event.key == pygame.K_w:
+        if event.key == pygame.K_LEFT:
             y_fac1 = -1
-        if event.key == pygame.K_s:
+        if event.key == pygame.K_RIGHT:
             y_fac1 = 1
     if event.type == pygame.KEYUP:
         if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
             y_fac = 0
-        if event.key == pygame.K_w or event.key == pygame.K_s:
+        if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
             y_fac1 = 0
     return [y_fac, y_fac1]
 
@@ -320,15 +321,14 @@ def main(game_modes):
                 if event.type == pygame.QUIT:
                     running = False
                     ## there is a bug here. Keyboard controller2 is not functioning
-                
-                
-                geek2_y_fac = keyboard_controller(event, pygame)
-                geek1_y_fac = keyboard_controller2(event, pygame)
+
+                # geek2_y_fac = keyboard_controller(event, pygame)
+                # geek1_y_fac = keyboard_controller2(event, pygame)
                 # print(geek1_y_fac)
                 # geek2_y_fac, geek1_y_fac = keyboard_controller3(event, pygame)
-                # y_list = keyboard_controller3(event, pygame)
-                # geek2_y_fac = y_list[0]
-                # geek1_y_fac = y_list[1]
+                y_list = keyboard_controller3(event, pygame)
+                geek2_y_fac = y_list[0]
+                geek1_y_fac = y_list[1]
                 # print(geek1_y_fac)
                 # if event.type == pygame.KEYDOWN:
                 #     if event.key == pygame.K_UP:
@@ -347,7 +347,7 @@ def main(game_modes):
         ##update the position of the paddles
         geek2.update(geek2_y_fac)
         geek1.update(geek1_y_fac)
-       
+
         ##collide rules of balls
         for geek in list_of_geeks:
             if pygame.Rect.colliderect(ball.get_rect(), geek.get_rect()):
