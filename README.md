@@ -18,4 +18,5 @@ conda activate kscb_summer
 conda config --add channels conda-forge
 conda config --set channel_priority strict
 conda install --yes -c conda-forge -v numpy opencv~~
-pip install pygame opencv-python
+
+pip install pygame opencv-python notebook
