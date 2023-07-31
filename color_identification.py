@@ -1,8 +1,12 @@
 import numpy as np
 import cv2
+'''
+Color identification: use mouse cursor to adjust lower and upper bound of the threshold to isolate color spectrum. Isolated color will be shown in the mask and result. 
+Press Q to save the result and leave this procedure
+'''
 
 
-def color_check():
+def hsv_color_range():
     cap = cv2.VideoCapture(0)
 
     cv2.namedWindow("Trackbars")
@@ -11,7 +15,7 @@ def color_check():
 
     for name, default_value in zip(trackbar_names, default_values):
         cv2.createTrackbar(
-            name, "Trackbars", default_value, 255 if "S" in name else 179, nothing
+            name, "Trackbars", default_value, 179 if "H" in name else 255, nothing
         )
 
     while True:
@@ -21,13 +25,13 @@ def color_check():
         frame = cv2.resize(frame, (640, 480))
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        lower_blue = np.array(
+        lower_range = np.array(
             [cv2.getTrackbarPos(name, "Trackbars") for name in trackbar_names[:3]]
         )
-        upper_blue = np.array(
+        upper_range = np.array(
             [cv2.getTrackbarPos(name, "Trackbars") for name in trackbar_names[3:]]
         )
-        mask = cv2.inRange(hsv, lower_blue, upper_blue)
+        mask = cv2.inRange(hsv, lower_range, upper_range)
         result = cv2.bitwise_and(frame, frame, mask=mask)
 
         # show thresholded image
@@ -41,7 +45,7 @@ def color_check():
     cap.release()
     cv2.destroyAllWindows()
 
-    return lower_blue, upper_blue
+    return lower_range, upper_range
 
 
 def nothing(x):
@@ -49,6 +53,6 @@ def nothing(x):
 
 
 if __name__ == "__main__":
-    lower_blue, upper_blue = color_check()
-    print("Lower Blue:", lower_blue)
-    print("Upper Blue:", upper_blue)
+    lower_range, upper_range = hsv_color_range()
+    print("The lower bound of the threshold:", lower_range)
+    print("The upper bound of the threshold:", upper_range)
