@@ -12,11 +12,17 @@ Install the latest anaconda version for your operating system (https://www.anaco
 
 Open the anaconda prompt and create a virtual environment via conda
 
+
 conda create --name kscb_summer --channel conda-forge python=3.11
+
+
 conda activate kscb_summer
+
+
 ~~conda update -n base -c defaults conda
 conda config --add channels conda-forge
 conda config --set channel_priority strict
 conda install --yes -c conda-forge -v numpy opencv~~
+
 
 pip install pygame opencv-python notebook
