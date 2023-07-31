@@ -2,19 +2,22 @@ import pygame
 import cv2
 import numpy as np
 from collections import deque
-from track_chatGPT import color_check
+from color_identification import hsv_color_range
 
 update_color_config = False
+
 if update_color_config:
-    lower_blue, upper_blue = color_check()
-    print(lower_blue, upper_blue)
-    lower_red, upper_red = color_check()
-    print(lower_red, upper_red)
+    print("Colour identification: use mouse cursor to adjust lower and upper bound of the threshold to isolate color spectrum. Isolated color will be shown as white in the Mask window. Press Q to return the result and leave this procedure")
+    lower_blue, upper_blue = hsv_color_range()
+    print(f"Colour 1 is in between {lower_blue} and {upper_blue}")
+    lower_red, upper_red = hsv_color_range()
+    print(f"Colour 2 is in between {lower_red} and {upper_red}")
     lower_ranges = [np.array(lower_blue), np.array(lower_red)]
     upper_ranges = [np.array(upper_blue), np.array(upper_red)]
+    print(f"Complete updating the colour thresholds")
 else:
-    lower_ranges = [np.array([96, 91, 83]), np.array([0, 80, 0])]
-    upper_ranges = [np.array([158, 255, 179]), np.array([78, 255, 179])]
+    lower_ranges = [np.array([72, 98, 64]), np.array([129, 106, 62])]
+    upper_ranges = [np.array([131, 255, 255]), np.array([179, 255, 255])]
 
 # print(lower_ranges, upper_ranges)
 cap = cv2.VideoCapture(0)
@@ -23,7 +26,7 @@ pygame.init()
 # Basic parameters of the screen
 WIDTH, HEIGHT = 900, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Pong")
+pygame.display.set_caption("Pong, close the window or press esc to end the game")
 
 clock = pygame.time.Clock()
 FPS = 30
@@ -355,7 +358,7 @@ if __name__ == "__main__":
         "two_balls": False,
         "one_player": False,
         "play_with_camera":True,
-        "demo_mode": False,
+        "demo_mode": True,
     }
     main(game_modes)
     pygame.quit()
