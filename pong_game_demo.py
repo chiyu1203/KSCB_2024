@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 from collections import deque
 from track_chatGPT import color_check
-update_color_config=False
+
+update_color_config = False
 if update_color_config:
     lower_blue, upper_blue = color_check()
     print(lower_blue, upper_blue)
@@ -152,8 +153,8 @@ def camera_controller(track1, track2):
     return y_fac
 
 
-def camera_controller2(area_1, area_2, area1_init, area2_init,counter):
-    darea_list=[0,0]
+def camera_controller2(area_1, area_2, area1_init, area2_init, counter):
+    darea_list = [0, 0]
     pts.appendleft((int(area_1), int(area_2)))
     for i in np.arange(1, len(pts)):
         if pts[i - 1] is None or pts[i] is None:
@@ -161,7 +162,7 @@ def camera_controller2(area_1, area_2, area1_init, area2_init,counter):
         # check to see if enough points have been accumulated in
         # the buffer
         if counter >= 10 and i == 1 and pts[-10] is not None:
-            darea_list=np.mean(pts,axis=0)
+            darea_list = np.mean(pts, axis=0)
 
     if darea_list[0] > area1_init:
         y_fac = 1
@@ -188,21 +189,27 @@ def AI_controller(ball, geek):
 
     return y_fac
 
-def AI_controller2(ball1,ball2, geek):
+
+def AI_controller2(ball1, ball2, geek):
     y_fac = 0
-    if ball1.posx > ball2.posx:
+    ball1_arr = np.array((ball1.posx, ball1.posy))
+    ball2_arr = np.array((ball2.posx, ball2.posy))
+    geek_arr = np.array((geek._posx, geek._posy))
+    dist_geek_1 = np.linalg.norm(geek_arr - ball1_arr)
+    dist_geek_2 = np.linalg.norm(geek_arr - ball2_arr)
+    if dist_geek_1 > dist_geek_2:
         if ball2.posy > geek.posy and abs(ball2.posy - geek.posy) > 10:
             y_fac = 1
         elif ball2.posy < geek.posy and abs(ball2.posy - geek.posy) > 10:
             y_fac = -1
 
-    elif ball1.posx < ball2.posx:
+    elif dist_geek_1 < dist_geek_2:
         if ball1.posy > geek.posy and abs(ball1.posy - geek.posy) > 10:
             y_fac = 1
         elif ball1.posy < geek.posy and abs(ball1.posy - geek.posy) > 10:
-            y_fac = -1  
+            y_fac = -1
     else:
-        y_fac=0
+        y_fac = 0
 
     return y_fac
 
@@ -237,67 +244,83 @@ def main(game_modes):
     list_of_geeks = [geek1, geek2]
     geek1_score, geek2_score = 0, 0
     geek1_y_fac, geek2_y_fac = 0, 0
-    area1_init=0
-    area2_init=0
+    area1_init = 0
+    area2_init = 0
     while running:
         screen.fill(BLACK)
-        if game_modes.get("play_with_camera"):
-            ret, frame = cap.read()
-            if not ret:
-                running = False
-                break
-            frame = cv2.resize(frame, (640, 480))
-            num_1, area_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
-            num_2, area_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
-            if counter==0:
-                area1_init=area_1
-                area2_init=area_2
-            if game_modes.get("one_player") == True:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-
-                    geek2_y_fac = camera_controller(num_1, num_2)
-            # AI PC
+        if game_modes.get("demo_mode"):
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            if game_modes.get(
+                "two_balls"
+            ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
+                geek1_y_fac = AI_controller2(ball, ball2, geek1)
+                geek2_y_fac = AI_controller2(ball, ball2, geek2)
+            else:
                 geek1_y_fac = AI_controller(ball, geek1)
-                if game_modes.get(
-                    "two_balls"
-                ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
-                    geek1_y_fac = AI_controller(ball2, geek1)
-            else:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-                    ## there is a bug here. Keyboard controller2 is not functioning
-                # geek2_y_fac = keyboard_controller(event, pygame)
-                # geek2_y_fac, geek1_y_fac = keyboard_controller2(event, pygame)
-                    y_list = camera_controller2(area_1, area_2, area1_init, area2_init,counter)
-                    geek2_y_fac = y_list[0]
-                    geek1_y_fac = y_list[1]
+                geek2_y_fac = AI_controller(ball, geek2)
+
         else:
-            if game_modes.get("one_player") == True:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-                    y_list = keyboard_controller(event, pygame)
-                    geek2_y_fac = y_list[0]
-            # AI PC
+            if game_modes.get("play_with_camera"):
+                ret, frame = cap.read()
+                if not ret:
+                    running = False
+                    break
+                frame = cv2.resize(frame, (640, 480))
+                num_1, area_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
+                num_2, area_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
+                if counter == 0:
+                    area1_init = area_1
+                    area2_init = area_2
+                if game_modes.get("one_player") == True:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            running = False
 
-                if game_modes.get(
-                    "two_balls"
-                ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
-                    geek1_y_fac = AI_controller2(ball, ball2, geek1)
-                else:
+                        geek2_y_fac = camera_controller(num_1, num_2)
+                    # AI PC
                     geek1_y_fac = AI_controller(ball, geek1)
+                    if game_modes.get(
+                        "two_balls"
+                    ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
+                        geek1_y_fac = AI_controller(ball2, geek1)
+                else:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            running = False
+                        ## there is a bug here. Keyboard controller2 is not functioning
+                        # geek2_y_fac = keyboard_controller(event, pygame)
+                        # geek2_y_fac, geek1_y_fac = keyboard_controller2(event, pygame)
+                        y_list = camera_controller2(
+                            area_1, area_2, area1_init, area2_init, counter
+                        )
+                        geek2_y_fac = y_list[0]
+                        geek1_y_fac = y_list[1]
             else:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-                    ## there is a bug here. Keyboard controller2 is not functioning
+                if game_modes.get("one_player") == True:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            running = False
+                        y_list = keyboard_controller(event, pygame)
+                        geek2_y_fac = y_list[0]
+                    # AI PC
 
-                    y_list = keyboard_controller(event, pygame)
-                    geek2_y_fac = y_list[0]
-                    geek1_y_fac = y_list[1]
+                    if game_modes.get(
+                        "two_balls"
+                    ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
+                        geek1_y_fac = AI_controller2(ball, ball2, geek1)
+                    else:
+                        geek1_y_fac = AI_controller(ball, geek1)
+                else:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            running = False
+                        ## there is a bug here. Keyboard controller2 is not functioning
+
+                        y_list = keyboard_controller(event, pygame)
+                        geek2_y_fac = y_list[0]
+                        geek1_y_fac = y_list[1]
 
         ##update the position of the paddles
         geek2.update(geek2_y_fac)
