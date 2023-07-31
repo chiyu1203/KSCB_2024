@@ -143,40 +143,23 @@ def keyboard_controller(event, pygame):
 
 
 def camera_controller(track1, track2):
-    y_fac = 0
-    if track2 > track1:
-        y_fac = 1
-    elif track2 < track1:
-        y_fac = -1
-    else:
-        y_fac = 0
+    y_fac = max(-1, min(1, track2 - track1))
     return y_fac
 
 
-def camera_controller2(area_1, area_2, area1_init, area2_init, counter):
-    darea_list = [0, 0]
-    pts.appendleft((int(area_1), int(area_2)))
+def camera_controller2(track1, track2, track1_init, track2_init, counter):
+    avg_track_list = [0, 0]
+    pts.appendleft((int(track1), int(track2)))
     for i in np.arange(1, len(pts)):
         if pts[i - 1] is None or pts[i] is None:
             continue
         # check to see if enough points have been accumulated in
         # the buffer
         if counter >= 10 and i == 1 and pts[-10] is not None:
-            darea_list = np.mean(pts, axis=0)
+            avg_track_list = np.mean(pts, axis=0)
 
-    if darea_list[0] > area1_init:
-        y_fac = 1
-    elif darea_list[0] < area1_init:
-        y_fac = -1
-    else:
-        y_fac = 0
-
-    if darea_list[1] > area2_init:
-        y_fac1 = 1
-    elif darea_list[1] < area2_init:
-        y_fac1 = -1
-    else:
-        y_fac1 = 0
+    y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
+    y_fac1 = max(-1, min(1, avg_track_list[1] - track2_init))
     return [y_fac, y_fac1]
 
 
@@ -252,9 +235,10 @@ def main(game_modes):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-            if game_modes.get(
-                "two_balls"
-            ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+            if game_modes.get("two_balls"):
                 geek1_y_fac = AI_controller2(ball, ball2, geek1)
                 geek2_y_fac = AI_controller2(ball, ball2, geek2)
             else:
@@ -277,21 +261,23 @@ def main(game_modes):
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             running = False
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_ESCAPE:
+                                running = False
 
                         geek2_y_fac = camera_controller(num_1, num_2)
                     # AI PC
-                    geek1_y_fac = AI_controller(ball, geek1)
-                    if game_modes.get(
-                        "two_balls"
-                    ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
-                        geek1_y_fac = AI_controller(ball2, geek1)
+                    if game_modes.get("two_balls"):
+                        geek1_y_fac = AI_controller2(ball, ball2, geek1)
+                    else:
+                        geek1_y_fac = AI_controller(ball, geek1)
                 else:
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             running = False
-                        ## there is a bug here. Keyboard controller2 is not functioning
-                        # geek2_y_fac = keyboard_controller(event, pygame)
-                        # geek2_y_fac, geek1_y_fac = keyboard_controller2(event, pygame)
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_ESCAPE:
+                                running = False
                         y_list = camera_controller2(
                             area_1, area_2, area1_init, area2_init, counter
                         )
@@ -302,13 +288,12 @@ def main(game_modes):
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             running = False
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_ESCAPE:
+                                running = False
                         y_list = keyboard_controller(event, pygame)
                         geek2_y_fac = y_list[0]
-                    # AI PC
-
-                    if game_modes.get(
-                        "two_balls"
-                    ):  ### leave this as a bug for the tutorials: AI controller only cares about ball2
+                    if game_modes.get("two_balls"):
                         geek1_y_fac = AI_controller2(ball, ball2, geek1)
                     else:
                         geek1_y_fac = AI_controller(ball, geek1)
@@ -316,8 +301,10 @@ def main(game_modes):
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             running = False
-                        ## there is a bug here. Keyboard controller2 is not functioning
-
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_ESCAPE:
+                                running = False
+                        ## there is a bug  in the pygame that when wrapping up in a function, some key press was prioritised by others
                         y_list = keyboard_controller(event, pygame)
                         geek2_y_fac = y_list[0]
                         geek1_y_fac = y_list[1]
