@@ -26,7 +26,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pong")
 
 clock = pygame.time.Clock()
-FPS = 60
+FPS = 30
 
 # Colors
 BLACK = pygame.Color(0, 0, 0)
@@ -150,26 +150,7 @@ def camera_controller(track1, track2):
 def camera_controller2(track1, track2, track1_init, track2_init, counter):
     avg_track_list = [0, 0]
     pts.appendleft((int(track1), int(track2)))
-    for i in np.arange(1, len(pts)):
-        if pts[i - 1] is None or pts[i] is None:
-            continue
-        # check to see if enough points have been accumulated in
-        # the buffer
-        if counter >= 10 and i == 1 and pts[-10] is not None:
-            avg_track_list = np.mean(pts, axis=0)
-    # if avg_track_list[0] > track1_init:
-    #     y_fac = 1
-    # elif avg_track_list[0] < track1_init:
-    #     y_fac = -1
-    # else:
-    #     y_fac = 0
-
-    # if avg_track_list[1] > track2_init:
-    #     y_fac1 = 1
-    # elif avg_track_list[1] < track2_init:
-    #     y_fac1 = -1
-    # else:
-    #     y_fac1 = 0
+    avg_track_list = np.nanmean(pts, axis=0)
     y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
     y_fac1 = max(-1, min(1, avg_track_list[1] - track2_init))
     return [y_fac, y_fac1]
@@ -216,11 +197,11 @@ def color_track(img, lower_range, upper_range):
     mask = cv2.inRange(hsv, lower_range, upper_range)
     _, mask1 = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
     cnts, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    for c in cnts:
-        x = 600
-        if cv2.contourArea(c) > x:
-            area += cv2.contourArea(c)
-            num_cnt += 1
+    x=600
+    OutArea = [cv2.contourArea(c) for c in cnts if cv2.contourArea(c) > x]
+    num_cnt= len(OutArea)
+    area = sum(OutArea)
+
     return num_cnt, area
 
 
@@ -229,7 +210,7 @@ def main(game_modes):
     counter = 0
     geek1 = Striker(20, 0, 10, 100, 10, GREEN)
     geek2 = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
-    ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 3.5, WHITE)
+    ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, WHITE)
     ball2 = (
         Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED)
         if game_modes.get("two_balls")
@@ -372,8 +353,8 @@ def main(game_modes):
 if __name__ == "__main__":
     game_modes = {
         "two_balls": False,
-        "one_player": True,
-        "play_with_camera": True,
+        "one_player": False,
+        "play_with_camera":True,
         "demo_mode": False,
     }
     main(game_modes)
