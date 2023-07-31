@@ -14,6 +14,10 @@ Open the anaconda prompt and create a virtual environment via conda
 
 ```
 conda create --name kscb_2023 --channel conda-forge python=3.11
+```
+```
 conda activate kscb_2023
+```
+```
 pip install pygame opencv-python notebook
 ```
