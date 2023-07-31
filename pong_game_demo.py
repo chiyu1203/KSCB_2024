@@ -38,7 +38,7 @@ RED = pygame.Color(255, 0, 0)
 font20 = pygame.font.Font("freesansbold.ttf", 20)
 
 pts = deque(maxlen=10)
-counter = 0
+
 
 
 class Striker:
@@ -143,12 +143,6 @@ def keyboard_controller(event, pygame):
 
 
 def camera_controller(track1, track2):
-    # if track2 > track1:
-    #     y_fac = 1
-    # elif track2 < track1:
-    #     y_fac = -1
-    # else:
-    #     y_fac = 0
     y_fac = max(-1, min(1, track2 - track1))
     return y_fac
 
@@ -232,7 +226,7 @@ def color_track(img, lower_range, upper_range):
 
 def main(game_modes):
     running = True
-
+    counter = 0
     geek1 = Striker(20, 0, 10, 100, 10, GREEN)
     geek2 = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
     ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 3.5, WHITE)
@@ -290,6 +284,7 @@ def main(game_modes):
                     else:
                         geek1_y_fac = AI_controller(ball, geek1)
                 else:
+                    print("enjoy two players with the camera")
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             running = False
@@ -299,6 +294,7 @@ def main(game_modes):
                     y_list = camera_controller2(
                         area_1, area_2, area1_init, area2_init, counter
                     )
+
                     geek2_y_fac = y_list[0]
                     geek1_y_fac = y_list[1]
             else:
@@ -330,7 +326,7 @@ def main(game_modes):
         ##update the position of the paddles
         geek2.update(geek2_y_fac)
         geek1.update(geek1_y_fac)
-
+        counter +=1
         ##collide rules of balls
         for geek in list_of_geeks:
             if pygame.Rect.colliderect(ball.get_rect(), geek.get_rect()):
@@ -375,10 +371,10 @@ def main(game_modes):
 
 if __name__ == "__main__":
     game_modes = {
-        "two_balls": True,
+        "two_balls": False,
         "one_player": True,
-        "play_with_camera": False,
-        "demo_mode": True,
+        "play_with_camera": True,
+        "demo_mode": False,
     }
     main(game_modes)
     pygame.quit()
