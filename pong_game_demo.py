@@ -1,13 +1,15 @@
+# from __future__ import print_function
 import pygame
 import cv2
 import numpy as np
 from collections import deque
 import argparse
 from color_identification import hsv_color_range
+from imutils.video import WebcamVideoStream
+from imutils.video import FPS
+import imutils
 
-# print(lower_ranges, upper_ranges)
-cap = cv2.VideoCapture(0)
-camera_fps = cap.get(cv2.CAP_PROP_FPS)
+
 pygame.init()
 
 # Basic parameters of the screen
@@ -16,7 +18,6 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pong, close the window or press esc to end the game")
 
 clock = pygame.time.Clock()
-monitor_fps = camera_fps * 2
 
 # Colors
 BLACK = pygame.Color(0, 0, 0)
@@ -145,6 +146,10 @@ def camera_controller2(track1, track2, track1_init, track2_init, counter):
     return [y_fac, y_fac1]
 
 
+## this method first calculate the distance of balls and the striker and focus on the ball that nearer the striker
+## balls class and striker class
+
+
 def AI_controller(ball, geek):
     y_fac = 0
     if ball.posy > geek.posy and abs(ball.posy - geek.posy) > 5:
@@ -153,6 +158,10 @@ def AI_controller(ball, geek):
         y_fac = -1
 
     return y_fac
+
+
+## this method is an advanced from the first one. Calculate the distance of balls and the striker and focus on the ball that nearer the striker
+## balls class and striker class
 
 
 def AI_controller_2balls(ball1, ball2, geek):
@@ -179,15 +188,17 @@ def AI_controller_2balls(ball1, ball2, geek):
     return y_fac
 
 
+## use openCV packages to identify particular colour
+## input: frame, colour range, output: detected the area size and number of the detected contour
 def color_track(img, lower_range, upper_range):
+    min_area = 600
     num_cnt = 0
     area = 0
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, lower_range, upper_range)
     _, mask1 = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
     cnts, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    x = 600
-    OutArea = [cv2.contourArea(c) for c in cnts if cv2.contourArea(c) > x]
+    OutArea = [cv2.contourArea(c) for c in cnts if cv2.contourArea(c) > min_area]
     num_cnt = len(OutArea)
     area = sum(OutArea)
 
@@ -202,20 +213,38 @@ def main(game_modes):
     ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, WHITE)
     ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED) if game_modes.two_balls else None
 
-    if game_modes.update_color_range:
+    if game_modes.multi_threaded_video_stream:
+        cap = WebcamVideoStream(src=0).start()
+        fps = FPS().start()
+        pygame_fps = 60
+        ## you need to manually test this program under demo mode to see how fast multiple threading speeds up the programme.
+        ## And set a reasonable fps for the pygame update rate
+    else:
+        cap = cv2.VideoCapture(0)
+        camera_fps = cap.get(cv2.CAP_PROP_FPS)
+        pygame_fps = camera_fps
+
+    if game_modes.update_color_range and game_modes.play_with_camera:
         print(
-            "Colour identification: use mouse cursor to adjust lower and upper bound of the threshold to isolate color spectrum. Isolated color will be shown as white in the Mask window. Press Q to return the result and leave this procedure"
+            "[INFO] colour identification: use mouse cursor to adjust lower and upper bound of the threshold to isolate color spectrum. Isolated color will be shown as white in the Mask window. Press Q to return the result and leave this procedure"
         )
         lower_blue, upper_blue = hsv_color_range()
-        print(f"Colour 1 is in between {lower_blue} and {upper_blue}")
+        print(f"[INFO] Colour 1 is in between {lower_blue} and {upper_blue}")
         lower_red, upper_red = hsv_color_range()
-        print(f"Colour 2 is in between {lower_red} and {upper_red}")
+        print(f"[INFO] Colour 2 is in between {lower_red} and {upper_red}")
         lower_ranges = [np.array(lower_blue), np.array(lower_red)]
         upper_ranges = [np.array(upper_blue), np.array(upper_red)]
-        print(f"Complete updating the colour thresholds")
+        print(f"[INFO] Complete updating the colour thresholds")
     else:
-        lower_ranges = [np.array([72, 98, 64]), np.array([129, 106, 62])]
-        upper_ranges = [np.array([131, 255, 255]), np.array([179, 255, 255])]
+        ## setting for logitech webcam
+        lower_ranges = [np.array([90, 31, 229]), np.array([0, 62, 78])]
+        upper_ranges = [np.array([179, 255, 255]), np.array([91, 255, 255])]
+        ## setting for build-in webcam
+        # lower_ranges = [np.array([72, 98, 64]), np.array([129, 106, 62])]
+        # upper_ranges = [np.array([131, 255, 255]), np.array([179, 255, 255])]
+        print(
+            f"[INFO] Use defacult colour thresholds. The first colour range is for blue and the second one is for red"
+        )
 
     list_of_geeks = [geek1, geek2]
     geek1_score, geek2_score = 0, 0
@@ -238,70 +267,72 @@ def main(game_modes):
                 geek1_y_fac = AI_controller(ball, geek1)
                 geek2_y_fac = AI_controller(ball, geek2)
 
-        else:
-            if game_modes.play_with_camera:
+        elif game_modes.play_with_camera:
+            # initiate video capture with either openCV or imutils
+            if game_modes.multi_threaded_video_stream:
+                frame = cap.read()
+                frame = imutils.resize(frame, width=480, height=640)
+            else:
                 ret, frame = cap.read()
                 if not ret:
                     running = False
                     break
                 frame = cv2.resize(frame, (640, 480))
-                num_1, area_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
-                num_2, area_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
-                if counter == 0:
-                    area1_init = area_1
-                    area2_init = area_2
-                if game_modes.single_player == True:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            running = False
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_ESCAPE:
-                                running = False
 
-                    geek2_y_fac = camera_controller(num_1, num_2)
-                    # AI PC
-                    if game_modes.two_balls:
-                        geek1_y_fac = AI_controller_2balls(ball, ball2, geek1)
-                    else:
-                        geek1_y_fac = AI_controller(ball, geek1)
+            # do colour tracking here
+            num_1, area_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
+            num_2, area_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
+            # do save initial value of area size or whatever you want to compare
+            if counter == 0:
+                area1_init = area_1
+                area2_init = area_2
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+            # entering controlling striker section
+            if game_modes.single_player == True:
+                geek2_y_fac = camera_controller(num_1, num_2)
+                # AI PC
+                if game_modes.two_balls:
+                    geek1_y_fac = AI_controller_2balls(ball, ball2, geek1)
                 else:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            running = False
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_ESCAPE:
-                                running = False
-                    y_list = camera_controller2(
-                        area_1, area_2, area1_init, area2_init, counter
-                    )
+                    geek1_y_fac = AI_controller(ball, geek1)
+            else:
+                y_list = camera_controller2(
+                    area_1, area_2, area1_init, area2_init, counter
+                )
 
+                geek2_y_fac = y_list[0]
+                geek1_y_fac = y_list[1]
+        else:
+            if game_modes.single_player == True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            running = False
+                    y_list = keyboard_controller(event, pygame)
+                    geek2_y_fac = y_list[0]
+                if game_modes.two_balls:
+                    geek1_y_fac = AI_controller_2balls(ball, ball2, geek1)
+                else:
+                    geek1_y_fac = AI_controller(ball, geek1)
+            else:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            running = False
+                    ## there is a bug  in the pygame that when wrapping up in a function, some key press was prioritised by others
+                    y_list = keyboard_controller(event, pygame)
                     geek2_y_fac = y_list[0]
                     geek1_y_fac = y_list[1]
-            else:
-                if game_modes.single_player == True:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            running = False
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_ESCAPE:
-                                running = False
-                        y_list = keyboard_controller(event, pygame)
-                        geek2_y_fac = y_list[0]
-                    if game_modes.two_balls:
-                        geek1_y_fac = AI_controller_2balls(ball, ball2, geek1)
-                    else:
-                        geek1_y_fac = AI_controller(ball, geek1)
-                else:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            running = False
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_ESCAPE:
-                                running = False
-                        ## there is a bug  in the pygame that when wrapping up in a function, some key press was prioritised by others
-                        y_list = keyboard_controller(event, pygame)
-                        geek2_y_fac = y_list[0]
-                        geek1_y_fac = y_list[1]
 
         ##update the position of the paddles
         geek2.update(geek2_y_fac)
@@ -346,22 +377,64 @@ def main(game_modes):
         geek2.display_score("Collective Power : ", geek2_score, WIDTH - 100, 20, WHITE)
 
         pygame.display.update()
-        clock.tick(monitor_fps)
+        clock.tick(pygame_fps)
+        if game_modes.multi_threaded_video_stream:
+            fps.update()
+    if game_modes.multi_threaded_video_stream:
+        fps.stop()
+        cv2.destroyAllWindows()
+        cap.stop()
+        print(
+            "[INFO] Approx. FPS: {:.2f} under multi-threading method. Can use this value to speed up the pygame update rate".format(
+                fps.fps()
+            )
+        )
 
 
 if __name__ == "__main__":
-    # game_modes = {
-    #     "two_balls": False,
-    #     "one_player": True,
-    #     "play_with_camera": False,
-    #     "demo_mode": False,
-    # }
     ap = argparse.ArgumentParser()
-    ap.add_argument("-b", "--two_balls", type=bool, default=False)
-    ap.add_argument("-p", "--single_player", type=bool, default=True)
-    ap.add_argument("-c", "--play_with_camera", type=bool, default=False)
-    ap.add_argument("-d", "--demo_mode", type=bool, default=False)
-    ap.add_argument("-u", "--update_color_range", type=bool, default=False)
+    ap.add_argument(
+        "-b",
+        "--two_balls",
+        type=bool,
+        default=False,
+        help="Whether to use two ball or not. If false, one ball is used",
+    )
+    ap.add_argument(
+        "-p",
+        "--single_player",
+        type=bool,
+        default=True,
+        help="Whether having single player in the game or not. If false, two players join",
+    )
+    ap.add_argument(
+        "-c",
+        "--play_with_camera",
+        type=bool,
+        default=False,
+        help="Whether to control striker with camera or not. If false, keyboard up and down are used",
+    )
+    ap.add_argument(
+        "-d",
+        "--demo_mode",
+        type=bool,
+        default=False,
+        help="Whether to watch two AI play in the demo mode or not. If false, initiates the play mode",
+    )
+    ap.add_argument(
+        "-u",
+        "--update_color_range",
+        type=bool,
+        default=False,
+        help="Whether to update colour range for video tracking or not. If false, defaults values to track blue and red are used",
+    )
+    ap.add_argument(
+        "-m",
+        "--multi_threaded_video_stream",
+        type=bool,
+        default=True,
+        help="Use imutil package to speed up video stream. If false, default setting use openCV videocapture",
+    )
     game_modes = ap.parse_args()
     main(game_modes)
     pygame.quit()

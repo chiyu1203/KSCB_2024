@@ -1,9 +1,10 @@
 import numpy as np
 import cv2
-'''
+
+"""
 Color identification: use mouse cursor to adjust lower and upper bound of the threshold to isolate color spectrum. Isolated color will be shown in the mask and result. 
 Press Q to save the result and leave this procedure
-'''
+"""
 
 
 def hsv_color_range():
