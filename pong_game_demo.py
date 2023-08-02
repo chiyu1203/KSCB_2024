@@ -1,4 +1,3 @@
-# from __future__ import print_function
 import pygame
 import cv2
 import numpy as np
@@ -38,7 +37,7 @@ class Striker:
         self.height = height
         self.speed = speed
         self.color = color
-        self.geek_rect = pygame.Rect(posx, posy, width, height)
+        self.striker_rect = pygame.Rect(posx, posy, width, height)
 
     @property
     def posy(self):
@@ -47,10 +46,10 @@ class Striker:
     @posy.setter
     def posy(self, value):
         self._posy = max(0, min(value, HEIGHT - self.height))
-        self.geek_rect.y = self._posy
+        self.striker_rect.y = self._posy
 
     def display(self):
-        pygame.draw.rect(screen, self.color, self.geek_rect)
+        pygame.draw.rect(screen, self.color, self.striker_rect)
 
     def update(self, y_fac):
         self.posy += self.speed * y_fac
@@ -61,7 +60,7 @@ class Striker:
         screen.blit(text, text_rect)
 
     def get_rect(self):
-        return self.geek_rect
+        return self.striker_rect
 
 
 class Ball:
@@ -131,29 +130,15 @@ def keyboard_controller(event, pygame):
     return [y_fac, y_fac1]
 
 
-def camera_controller_no_baseline(track1, track2):
-    y_fac = max(-1, min(1, track2 - track1))
-    return [y_fac]
+## this method updates the position of striker based on ball's position
 
 
-def camera_controller_baseline(track1, track2, track1_init, track2_init):
-    avg_track_list = [0, 0]
-    pts.appendleft((int(track1), int(track2)))
-    avg_track_list = np.nanmean(pts, axis=0)
-    y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
-    y_fac1 = max(-1, min(1, avg_track_list[1] - track2_init))
-    return [y_fac, y_fac1]
-
-
-## this method first calculate the distance of balls and the striker and focus on the ball that nearer the striker
-## balls class and striker class
-
-
-def AI_controller(ball, geek):
+def AI_controller(ball, striker):
     y_fac = 0
-    if ball.posy > geek.posy and abs(ball.posy - geek.posy) > 15:
+    buffer_distance = 10
+    if ball.posy > striker.posy and abs(ball.posy - striker.posy) > buffer_distance:
         y_fac = 1
-    elif ball.posy < geek.posy and abs(ball.posy - geek.posy) > 15:
+    elif ball.posy < striker.posy and abs(ball.posy - striker.posy) > buffer_distance:
         y_fac = -1
 
     return y_fac
@@ -163,23 +148,36 @@ def AI_controller(ball, geek):
 ## balls class and striker class
 
 
-def AI_controller_2balls(ball1, ball2, geek):
+def AI_controller_2balls(ball1, ball2, striker):
     y_fac = 0
+    buffer_distance = 10
     ball1_arr = np.array((ball1.posx, ball1.posy))
     ball2_arr = np.array((ball2.posx, ball2.posy))
-    geek_arr = np.array((geek._posx, geek._posy))
-    dist_geek_1 = np.linalg.norm(geek_arr - ball1_arr)
-    dist_geek_2 = np.linalg.norm(geek_arr - ball2_arr)
-    if dist_geek_1 > dist_geek_2:
-        if ball2.posy > geek.posy and abs(ball2.posy - geek.posy) > 10:
+    striker_arr = np.array((striker._posx, striker._posy))
+    dist_striker_ball1 = np.linalg.norm(striker_arr - ball1_arr)
+    dist_striker_ball2 = np.linalg.norm(striker_arr - ball2_arr)
+    if dist_striker_ball1 > dist_striker_ball2:
+        if (
+            ball2.posy > striker.posy
+            and abs(ball2.posy - striker.posy) > buffer_distance
+        ):
             y_fac = 1
-        elif ball2.posy < geek.posy and abs(ball2.posy - geek.posy) > 10:
+        elif (
+            ball2.posy < striker.posy
+            and abs(ball2.posy - striker.posy) > buffer_distance
+        ):
             y_fac = -1
 
-    elif dist_geek_1 < dist_geek_2:
-        if ball1.posy > geek.posy and abs(ball1.posy - geek.posy) > 10:
+    elif dist_striker_ball1 < dist_striker_ball2:
+        if (
+            ball1.posy > striker.posy
+            and abs(ball1.posy - striker.posy) > buffer_distance
+        ):
             y_fac = 1
-        elif ball1.posy < geek.posy and abs(ball1.posy - geek.posy) > 10:
+        elif (
+            ball1.posy < striker.posy
+            and abs(ball1.posy - striker.posy) > buffer_distance
+        ):
             y_fac = -1
     else:
         y_fac = 0
@@ -204,11 +202,25 @@ def color_track(img, lower_range, upper_range):
     return num_cnt, area
 
 
+def camera_controller_no_baseline(track1, track2):
+    y_fac = max(-1, min(1, track2 - track1))
+    return [y_fac]
+
+
+def camera_controller_baseline(track1, track2, track1_init, track2_init):
+    avg_track_list = [0, 0]
+    pts.appendleft((int(track1), int(track2)))
+    avg_track_list = np.nanmean(pts, axis=0)
+    y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
+    y_fac1 = max(-1, min(1, avg_track_list[1] - track2_init))
+    return [y_fac, y_fac1]
+
+
 def main(game_modes):
     running = True
     counter = 0
-    geek1 = Striker(20, 0, 10, 100, 10, GREEN)
-    geek2 = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
+    strikerL = Striker(20, 0, 10, 100, 10, GREEN)
+    strikerR = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
     ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 4, WHITE)
     ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED) if game_modes.two_balls else None
 
@@ -244,12 +256,12 @@ def main(game_modes):
         # lower_ranges = [np.array([72, 98, 64]), np.array([129, 106, 62])]
         # upper_ranges = [np.array([131, 255, 255]), np.array([179, 255, 255])]
         print(
-            f"[INFO] Use defacult colour thresholds. The first colour range is for blue and the second one is for red"
+            f"[INFO] Use default colour thresholds. The first colour range is for blue and the second one is for red"
         )
 
-    list_of_geeks = [geek1, geek2]
-    geek1_score, geek2_score = 0, 0
-    geek1_y_fac, geek2_y_fac = 0, 0
+    list_of_strikers = [strikerL, strikerR]
+    strikerL_score, strikerR_score = 0, 0
+    strikerL_y_fac, strikerR_y_fac = 0, 0
     area1_init = 0
     area2_init = 0
     while running:
@@ -262,11 +274,11 @@ def main(game_modes):
                     if event.key == pygame.K_ESCAPE:
                         running = False
             if game_modes.two_balls:
-                geek1_y_fac = AI_controller_2balls(ball, ball2, geek1)
-                geek2_y_fac = AI_controller_2balls(ball, ball2, geek2)
+                strikerL_y_fac = AI_controller_2balls(ball, ball2, strikerL)
+                strikerR_y_fac = AI_controller_2balls(ball, ball2, strikerR)
             else:
-                geek1_y_fac = AI_controller(ball, geek1)
-                geek2_y_fac = AI_controller(ball, geek2)
+                strikerL_y_fac = AI_controller(ball, strikerL)
+                strikerR_y_fac = AI_controller(ball, strikerR)
 
         elif game_modes.play_with_camera:
             # initiate video capture with either openCV or imutils
@@ -297,25 +309,29 @@ def main(game_modes):
             # entering controlling striker section
             if game_modes.single_player == True:
                 if game_modes.use_baseline_value == True:
-                    y_list = camera_controller_baseline(area_1, area_2, area1_init, area2_init)
+                    y_list = camera_controller_baseline(
+                        area_1, area_2, area1_init, area2_init
+                    )
                 else:
                     y_list = camera_controller_no_baseline(area_1, area_2)
 
-                geek2_y_fac = y_list[0]
+                strikerR_y_fac = y_list[0]
                 # AI PC
                 if game_modes.two_balls:
-                    geek1_y_fac = AI_controller_2balls(ball, ball2, geek1)
+                    strikerL_y_fac = AI_controller_2balls(ball, ball2, strikerL)
                 else:
-                    geek1_y_fac = AI_controller(ball, geek1)
+                    strikerL_y_fac = AI_controller(ball, strikerL)
             else:
                 if game_modes.use_baseline_value == True:
-                    y_list = camera_controller_baseline(area_1, area_2, area1_init, area2_init)
+                    y_list = camera_controller_baseline(
+                        area_1, area_2, area1_init, area2_init
+                    )
                 else:
                     y_list = camera_controller_no_baseline(area_1, area_2)
 
-                geek2_y_fac = y_list[0]
-                if len(y_list)>1:
-                    geek1_y_fac = y_list[1]
+                strikerR_y_fac = y_list[0]
+                if len(y_list) > 1:
+                    strikerL_y_fac = y_list[1]
         else:
             if game_modes.single_player == True:
                 for event in pygame.event.get():
@@ -325,11 +341,11 @@ def main(game_modes):
                         if event.key == pygame.K_ESCAPE:
                             running = False
                     y_list = keyboard_controller(event, pygame)
-                    geek2_y_fac = y_list[0]
+                    strikerR_y_fac = y_list[0]
                 if game_modes.two_balls:
-                    geek1_y_fac = AI_controller_2balls(ball, ball2, geek1)
+                    strikerL_y_fac = AI_controller_2balls(ball, ball2, strikerL)
                 else:
-                    geek1_y_fac = AI_controller(ball, geek1)
+                    strikerL_y_fac = AI_controller(ball, strikerL)
             else:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -339,19 +355,19 @@ def main(game_modes):
                             running = False
                     ## there is a bug  in the pygame that when wrapping up in a function, some key press was prioritised by others
                     y_list = keyboard_controller(event, pygame)
-                    geek2_y_fac = y_list[0]
-                    geek1_y_fac = y_list[1]
+                    strikerR_y_fac = y_list[0]
+                    strikerL_y_fac = y_list[1]
 
         ##update the position of the paddles
-        geek2.update(geek2_y_fac)
-        geek1.update(geek1_y_fac)
+        strikerR.update(strikerR_y_fac)
+        strikerL.update(strikerL_y_fac)
         counter += 1
         ##collide rules of balls
-        for geek in list_of_geeks:
-            if pygame.Rect.colliderect(ball.get_rect(), geek.get_rect()):
+        for striker in list_of_strikers:
+            if pygame.Rect.colliderect(ball.get_rect(), striker.get_rect()):
                 ball.hit()
             if game_modes.two_balls and pygame.Rect.colliderect(
-                ball2.get_rect(), geek.get_rect()
+                ball2.get_rect(), striker.get_rect()
             ):
                 ball2.hit()
 
@@ -360,29 +376,31 @@ def main(game_modes):
         point2 = ball2.update() if game_modes.two_balls else None
 
         if point1 == -1:
-            geek2_score += 1
+            strikerR_score += 1
         elif point1 == 1:
-            geek1_score += 1
+            strikerL_score += 1
 
         if game_modes.two_balls and point2:
             if point2 == -1:
-                geek2_score += 1
+                strikerR_score += 1
             elif point2 == 1:
-                geek1_score += 1
+                strikerL_score += 1
 
         if point1:
             ball.reset()
         if game_modes.two_balls and point2:
             ball2.reset()
 
-        geek1.display()
-        geek2.display()
+        strikerL.display()
+        strikerR.display()
         ball.display()
         if game_modes.two_balls:
             ball2.display()
 
-        geek1.display_score("Konstanz Gamer : ", geek1_score, 100, 20, WHITE)
-        geek2.display_score("Collective Power : ", geek2_score, WIDTH - 100, 20, WHITE)
+        strikerL.display_score("Konstanz Gamer : ", strikerL_score, 100, 20, WHITE)
+        strikerR.display_score(
+            "Collective Power : ", strikerR_score, WIDTH - 100, 20, WHITE
+        )
 
         pygame.display.update()
         clock.tick(pygame_fps)
@@ -405,7 +423,7 @@ if __name__ == "__main__":
         "-b",
         "--two_balls",
         type=bool,
-        default=False,
+        default=True,
         help="Whether to use two ball or not. If false, one ball is used",
     )
     ap.add_argument(
@@ -419,7 +437,7 @@ if __name__ == "__main__":
         "-c",
         "--play_with_camera",
         type=bool,
-        default=True,
+        default=False,
         help="Whether to control striker with camera or not. If false, keyboard up and down are used",
     )
     ap.add_argument(
@@ -441,14 +459,14 @@ if __name__ == "__main__":
         "--multi_threaded_video_stream",
         type=bool,
         default=False,
-        help="Use imutil package to speed up video stream. If false, default setting use openCV videocapture",
+        help="Use imutil package to speed up video stream. If false, default setting use openCV VideoCapture",
     )
     ap.add_argument(
         "-v",
         "--use_baseline_value",
         type=bool,
         default=False,
-        help="Use calculating striker movmenet based on baseline value from the first frame 1",
+        help="Use calculating striker movement based on baseline value from the first frame",
     )
     game_modes = ap.parse_args()
     main(game_modes)
