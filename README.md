@@ -28,7 +28,7 @@ pip install pygame opencv-python notebook imutils
 ```
 Optional package (in case you want to plot some outputs):
 ```
-pip install matploblib
+pip install matplotlib
 ```
 
 
