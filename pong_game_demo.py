@@ -188,14 +188,15 @@ def AI_controller_2balls(ball1, ball2, striker):
 ## use openCV packages to identify particular colour
 ## input: frame, colour range, output: detected the area size and number of the detected contour
 def color_track(img, lower_range, upper_range):
-    min_area = 600
+    min_area = 30
+    max_area =300
     num_cnt = 0
     area = 0
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, lower_range, upper_range)
     _, mask1 = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
     cnts, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    OutArea = [cv2.contourArea(c) for c in cnts if cv2.contourArea(c) > min_area]
+    OutArea = [cv2.contourArea(c) for c in cnts if cv2.contourArea(c) > min_area and cv2.contourArea(c) < max_area]
     num_cnt = len(OutArea)
     area = sum(OutArea)
 
@@ -208,11 +209,18 @@ def camera_controller_no_baseline(track1, track2):
 
 
 def camera_controller_baseline(track1, track2, track1_init, track2_init):
+    control_one=True
     avg_track_list = [0, 0]
     pts.appendleft((int(track1), int(track2)))
     avg_track_list = np.nanmean(pts, axis=0)
-    y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
-    y_fac1 = max(-1, min(1, avg_track_list[1] - track2_init))
+    track2_diff=avg_track_list[1] - track2_init
+    track1_diff=avg_track_list[0] - track1_init
+    if control_one:
+        y_fac = max(-1, min(1, track2_diff - track1_diff)) 
+        y_fac1=0
+    else:
+        y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
+        y_fac1 = max(-1, min(1, avg_track_list[1] - track2_init))
     return [y_fac, y_fac1]
 
 
@@ -221,7 +229,7 @@ def main(game_modes):
     counter = 0
     strikerL = Striker(20, 0, 10, 100, 10, GREEN)
     strikerR = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
-    ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 4, WHITE)
+    ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 3, WHITE)
     ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED) if game_modes.two_balls else None
 
     if game_modes.multi_threaded_video_stream:
@@ -231,7 +239,7 @@ def main(game_modes):
         ## you need to manually test this program under demo mode to see how fast multiple threading speeds up the programme.
         ## And set a reasonable fps for the pygame update rate
     elif game_modes.play_with_camera:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(1)
         camera_fps = cap.get(cv2.CAP_PROP_FPS)
         pygame_fps = camera_fps
     else:
@@ -250,8 +258,10 @@ def main(game_modes):
         print(f"[INFO] Complete updating the colour thresholds")
     else:
         ## setting for logitech webcam
-        lower_ranges = [np.array([90, 31, 229]), np.array([0, 62, 78])]
-        upper_ranges = [np.array([179, 255, 255]), np.array([91, 255, 255])]
+        #lower_ranges = [np.array([90, 31, 229]), np.array([0, 62, 78])]
+        #upper_ranges = [np.array([179, 255, 255]), np.array([91, 255, 255])]
+        lower_ranges = [np.array([34, 74, 78]), np.array([30, 49,85])]
+        upper_ranges = [np.array([154, 170, 255]), np.array([141, 130, 255])]
         ## setting for build-in webcam
         # lower_ranges = [np.array([72, 98, 64]), np.array([129, 106, 62])]
         # upper_ranges = [np.array([131, 255, 255]), np.array([179, 255, 255])]
@@ -313,7 +323,7 @@ def main(game_modes):
                         area_1, area_2, area1_init, area2_init
                     )
                 else:
-                    y_list = camera_controller_no_baseline(area_1, area_2)
+                    y_list = camera_controller_no_baseline(num_1, num_2)
 
                 strikerR_y_fac = y_list[0]
                 # AI PC
@@ -437,7 +447,7 @@ if __name__ == "__main__":
         "-c",
         "--play_with_camera",
         type=bool,
-        default=False,
+        default=True,
         help="Whether to control striker with camera or not. If false, keyboard up and down are used",
     )
     ap.add_argument(
@@ -465,7 +475,7 @@ if __name__ == "__main__":
         "-v",
         "--use_baseline_value",
         type=bool,
-        default=False,
+        default=True,
         help="Use calculating striker movement based on baseline value from the first frame",
     )
     game_modes = ap.parse_args()
