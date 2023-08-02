@@ -131,19 +131,12 @@ def keyboard_controller(event, pygame):
     return [y_fac, y_fac1]
 
 
-def camera_controller(track1, track2, **kwargs):
-    if kwargs is None:
-        y_fac = max(-1, min(1, track2 - track1))
-    else:
-        avg_track_list = [0, 0]
-        pts.appendleft((int(track1), int(track2)))
-        avg_track_list = np.nanmean(pts, axis=0)
-        y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
-        y_fac1 = max(-1, min(1, avg_track_list[1] - track2_init))
-    return y_fac
+def camera_controller_no_baseline(track1, track2):
+    y_fac = max(-1, min(1, track2 - track1))
+    return [y_fac]
 
 
-def camera_controller2(track1, track2, track1_init, track2_init):
+def camera_controller_baseline(track1, track2, track1_init, track2_init):
     avg_track_list = [0, 0]
     pts.appendleft((int(track1), int(track2)))
     avg_track_list = np.nanmean(pts, axis=0)
@@ -304,11 +297,11 @@ def main(game_modes):
             # entering controlling striker section
             if game_modes.single_player == True:
                 if game_modes.use_baseline_value == True:
-                    geek2_y_fac = camera_controller(
-                        num_1, num_2, area1_init, area2_init
-                    )
+                    y_list = camera_controller_baseline(area_1, area_2, area1_init, area2_init)
                 else:
-                    geek2_y_fac = camera_controller(num_1, num_2)
+                    y_list = camera_controller_no_baseline(area_1, area_2)
+
+                geek2_y_fac = y_list[0]
                 # AI PC
                 if game_modes.two_balls:
                     geek1_y_fac = AI_controller_2balls(ball, ball2, geek1)
@@ -316,12 +309,13 @@ def main(game_modes):
                     geek1_y_fac = AI_controller(ball, geek1)
             else:
                 if game_modes.use_baseline_value == True:
-                    y_list = camera_controller2(area_1, area_2, area1_init, area2_init)
+                    y_list = camera_controller_baseline(area_1, area_2, area1_init, area2_init)
                 else:
-                    y_list = camera_controller2(area_1, area_2)
+                    y_list = camera_controller_no_baseline(area_1, area_2)
 
                 geek2_y_fac = y_list[0]
-                geek1_y_fac = y_list[1]
+                if len(y_list)>1:
+                    geek1_y_fac = y_list[1]
         else:
             if game_modes.single_player == True:
                 for event in pygame.event.get():
@@ -425,14 +419,14 @@ if __name__ == "__main__":
         "-c",
         "--play_with_camera",
         type=bool,
-        default=False,
+        default=True,
         help="Whether to control striker with camera or not. If false, keyboard up and down are used",
     )
     ap.add_argument(
         "-d",
         "--demo_mode",
         type=bool,
-        default=True,
+        default=False,
         help="Whether to watch two AI play in the demo mode or not. If false, initiates the play mode",
     )
     ap.add_argument(
@@ -446,8 +440,15 @@ if __name__ == "__main__":
         "-m",
         "--multi_threaded_video_stream",
         type=bool,
-        default=True,
+        default=False,
         help="Use imutil package to speed up video stream. If false, default setting use openCV videocapture",
+    )
+    ap.add_argument(
+        "-v",
+        "--use_baseline_value",
+        type=bool,
+        default=False,
+        help="Use calculating striker movmenet based on baseline value from the first frame 1",
     )
     game_modes = ap.parse_args()
     main(game_modes)
