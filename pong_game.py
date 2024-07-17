@@ -421,7 +421,7 @@ def main(game_modes):
         cv2.destroyAllWindows()
         cap.stop()
         print(
-            "[INFO] Approx. FPS: {:.2f} under multi-threading method. Can use this value to speed up the pygame update rate".format(
+            "[INFO] Approx. FPS: {:.2f} under multi-threading method. Can use this value to speed up the pygame update rate, which is the variable pygame_fps".format(
                 fps.fps()
             )
         )
@@ -432,50 +432,43 @@ if __name__ == "__main__":
     ap.add_argument(
         "-b",
         "--two_balls",
-        type=bool,
-        default=True,
-        help="Whether to use two ball or not. If false, one ball is used",
+        action='store_true',
+        help="Whether to use two ball or not. If it's  not provided, one ball is used",
     )
     ap.add_argument(
         "-p",
         "--single_player",
-        type=bool,
-        default=True,
-        help="Whether having single player in the game or not. If false, two players join",
+        action='store_true',
+        help="Whether having single player in the game or not. If it's  not provided, entering two-player mode",
     )
     ap.add_argument(
         "-c",
         "--play_with_camera",
-        type=bool,
-        default=True,
-        help="Whether to control striker with camera or not. If false, keyboard up and down are used",
+        action='store_true',
+        help="Whether to control striker with camera or not. If it's  not provided, keyboard up and down are used",
     )
     ap.add_argument(
         "-d",
         "--demo_mode",
-        type=bool,
-        default=False,
-        help="Whether to watch two AI play in the demo mode or not. If false, initiates the play mode",
+        action='store_true',
+        help="Whether to watch two AI play in the demo mode or not. If it's  not provided, initiates the play mode",
     )
     ap.add_argument(
         "-u",
         "--update_color_range",
-        type=bool,
-        default=False,
-        help="Whether to update colour range for video tracking or not. If false, defaults values to track blue and red are used",
+        action='store_true',
+        help="Whether to update colour range for video tracking or not. If it's  not provided, defaults values to track blue and red are used",
     )
     ap.add_argument(
         "-m",
         "--multi_threaded_video_stream",
-        type=bool,
-        default=False,
-        help="Use imutil package to speed up video stream. If false, default setting use openCV VideoCapture",
+        action='store_false',
+        help="Use imutil package to speed up video stream. If it's  not provided, default setting use openCV VideoCapture",
     )
     ap.add_argument(
         "-v",
         "--use_baseline_value",
-        type=bool,
-        default=True,
+        action='store_true',
         help="Use calculating striker movement based on baseline value from the first frame",
     )
     game_modes = ap.parse_args()
