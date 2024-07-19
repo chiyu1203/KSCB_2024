@@ -13,7 +13,7 @@ pygame.init()
 # Basic parameters of the screen
 WIDTH, HEIGHT = 900, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Pong, close the window or press esc to end the game")
+pygame.display.set_caption("Pong game: Close this window or press ESC to end the game")
 
 clock = pygame.time.Clock()
 
@@ -112,22 +112,22 @@ class Ball:
 
 
 def keyboard_controller(event, pygame):
-    y_fac, y_fac1 = 0, 0
+    y_fac, y_fac2 = 0, 0
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_UP:
             y_fac = -1
         if event.key == pygame.K_DOWN:
             y_fac = 1
         if event.key == pygame.K_LEFT:
-            y_fac1 = -1
+            y_fac2 = -1
         if event.key == pygame.K_RIGHT:
-            y_fac1 = 1
+            y_fac2 = 1
     if event.type == pygame.KEYUP:
         if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
             y_fac = 0
         if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-            y_fac1 = 0
-    return [y_fac, y_fac1]
+            y_fac2 = 0
+    return [y_fac, y_fac2]
 
 
 ## this method updates the position of striker based on ball's position
@@ -217,11 +217,11 @@ def camera_controller_baseline(track1, track2, track1_init, track2_init):
     track1_diff=avg_track_list[0] - track1_init
     if control_one:
         y_fac = max(-1, min(1, track2_diff - track1_diff)) 
-        y_fac1=0
+        y_fac2=0
     else:
         y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
-        y_fac1 = max(-1, min(1, avg_track_list[1] - track2_init))
-    return [y_fac, y_fac1]
+        y_fac2 = max(-1, min(1, avg_track_list[1] - track2_init))
+    return [y_fac, y_fac2]
 
 
 def main(game_modes):
@@ -436,7 +436,7 @@ if __name__ == "__main__":
         help="Whether to use two ball or not. If it's  not provided, one ball is used",
     )
     ap.add_argument(
-        "-p",
+        "-s",
         "--single_player",
         action='store_true',
         help="Whether having single player in the game or not. If it's  not provided, entering two-player mode",
