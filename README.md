@@ -1,5 +1,5 @@
-# KSCB_2023
-This is a repo to store codes used in CASCB summer school in 2023
+# KSCB_2024
+This is a repo to store codes used in CASCB summer school. The first tutorial was designed in 2023 and updated in 2024
 The codes, are for educational purpose, in this demo use these tutorial as a backbone
 
 https://www.geeksforgeeks.org/create-a-pong-game-in-python-pygame/
@@ -16,11 +16,11 @@ Install the latest anaconda version for your operating system (https://www.anaco
 Open the anaconda prompt and create a virtual environment via conda
 
 ```
-conda create --name kscb_2023 --channel conda-forge python=3.11
+conda create --name kscb_2024 --channel conda-forge python=3.11
 ```
 Activate the virtual environment
 ```
-conda activate kscb_2023
+conda activate kscb_2024
 ```
 Install dependencies via pip
 ```
