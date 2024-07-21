@@ -13,7 +13,6 @@ pygame.init()
 # Basic parameters of the screen
 WIDTH, HEIGHT = 900, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Pong game: Close this window or press ESC to end the game")
 
 clock = pygame.time.Clock()
 
@@ -232,42 +231,63 @@ def main(game_modes):
     ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 3, WHITE)
     ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED) if game_modes.two_balls else None
 
-    if game_modes.multi_threaded_video_stream:
-        cap = WebcamVideoStream(src=0).start()
-        fps = FPS().start()
-        pygame_fps = 60
-        ## you need to manually test this program under demo mode to see how fast multiple threading speeds up the programme.
-        ## And set a reasonable fps for the pygame update rate
-    elif game_modes.play_with_camera:
-        cap = cv2.VideoCapture(1)
-        camera_fps = cap.get(cv2.CAP_PROP_FPS)
-        pygame_fps = camera_fps
+    if game_modes.play_with_camera:
+        print(game_modes.openCV_VideoCapture_off)
+        if game_modes.openCV_VideoCapture_off:
+            cap = WebcamVideoStream(src=0).start()
+            fps = FPS().start()
+            pygame_fps = 60
+            ## you need to manually test this program under demo mode to see how fast multiple threading speeds up the programme.
+            ## And set a reasonable fps for the pygame update rate
+        else:
+            cap = cv2.VideoCapture(1)
+            camera_fps = cap.get(cv2.CAP_PROP_FPS)
+            pygame_fps = camera_fps
+            print(
+                f"[INFO] PYGAME_FPS is tight to how fast openCV takes video with your hardware"
+            )
     else:
-        pygame_fps = 30
-
-    if game_modes.update_color_range and game_modes.play_with_camera:
-        print(
+        pygame_fps = 60
+    if game_modes.play_with_camera:
+        pygame.display.set_caption("Pong game with camera: Close this window or press ESC to end the game")
+        if game_modes.update_color_range:
+            print("Controlling the Striker with your camera")
+            print(
             "[INFO] colour identification: use mouse cursor to adjust lower and upper bound of the threshold to isolate color spectrum. Isolated color will be shown as white in the Mask window. Press Q to return the result and leave this procedure"
         )
-        lower_blue, upper_blue = hsv_color_range()
-        print(f"[INFO] Colour 1 is in between {lower_blue} and {upper_blue}")
-        lower_red, upper_red = hsv_color_range()
-        print(f"[INFO] Colour 2 is in between {lower_red} and {upper_red}")
-        lower_ranges = [np.array(lower_blue), np.array(lower_red)]
-        upper_ranges = [np.array(upper_blue), np.array(upper_red)]
-        print(f"[INFO] Complete updating the colour thresholds")
-    else:
-        ## setting for logitech webcam
+            lower_blue, upper_blue = hsv_color_range()
+            print(f"[INFO] Colour 1 is in between {lower_blue} and {upper_blue}")
+            lower_red, upper_red = hsv_color_range()
+            print(f"[INFO] Colour 2 is in between {lower_red} and {upper_red}")
+            lower_ranges = [np.array(lower_blue), np.array(lower_red)]
+            upper_ranges = [np.array(upper_blue), np.array(upper_red)]
+            print(f"[INFO] Complete updating the colour thresholds")
+
+        else:
+                    ## setting for logitech webcam
         #lower_ranges = [np.array([90, 31, 229]), np.array([0, 62, 78])]
         #upper_ranges = [np.array([179, 255, 255]), np.array([91, 255, 255])]
-        lower_ranges = [np.array([34, 74, 78]), np.array([30, 49,85])]
-        upper_ranges = [np.array([154, 170, 255]), np.array([141, 130, 255])]
+            lower_ranges = [np.array([34, 74, 78]), np.array([30, 49,85])]
+            upper_ranges = [np.array([154, 170, 255]), np.array([141, 130, 255])]
         ## setting for build-in webcam
         # lower_ranges = [np.array([72, 98, 64]), np.array([129, 106, 62])]
         # upper_ranges = [np.array([131, 255, 255]), np.array([179, 255, 255])]
+            print("Controlling the Striker with your camera")
+            print(
+                f"[INFO] Use default colour thresholds. The first colour range is for blue and the second one is for red"
+            )
+    elif game_modes.demo_mode:
+        pygame.display.set_caption("Pong game demo: 2 PC players are playing against each others. Close this window or press ESC to end the game")
         print(
-            f"[INFO] Use default colour thresholds. The first colour range is for blue and the second one is for red"
+            "[INFO] Welcome to demo or PC mode. Here, 2 PC players are playing against each others. You can change how 1 PC player responds to the ball(s) and compare what would be the best strategy to play this game."
         )
+    else:
+        pygame.display.set_caption("Pong game with keyboard: Up and Down are for player 1 (the right striker). Close this window or press ESC to end the game")
+        print("Controlling the Striker with the keyboard. Use Up and Down to control player 1 (the right striker's movement). RIGHT and LEFT button are set to control the second player's movement (the left striker) by default, if player 2 is available")
+        print(
+            "[INFO] Welcome to demo or PC mode. Here, 2 PC players are playing against each others. You can change how 1 PC player responds to the ball(s) and compare what would be the best strategy to play this game."
+        )
+
 
     list_of_strikers = [strikerL, strikerR]
     strikerL_score, strikerR_score = 0, 0
@@ -292,7 +312,7 @@ def main(game_modes):
 
         elif game_modes.play_with_camera:
             # initiate video capture with either openCV or imutils
-            if game_modes.multi_threaded_video_stream:
+            if game_modes.openCV_VideoCapture_off:
                 frame = cap.read()
                 frame = imutils.resize(frame, width=480, height=640)
             else:
@@ -414,14 +434,14 @@ def main(game_modes):
 
         pygame.display.update()
         clock.tick(pygame_fps)
-        if game_modes.multi_threaded_video_stream:
+        if game_modes.openCV_VideoCapture_off and game_modes.play_with_camera:
             fps.update()
-    if game_modes.multi_threaded_video_stream:
+    if game_modes.openCV_VideoCapture_off and game_modes.play_with_camera:
         fps.stop()
         cv2.destroyAllWindows()
         cap.stop()
         print(
-            "[INFO] Approx. FPS: {:.2f} under multi-threading method. Can use this value to speed up the pygame update rate, which is the variable pygame_fps".format(
+            "[INFO] Approx. FPS: {:.2f} under multi-threading method. Update the variable PYGAME_FPS with this value in the code and observe how it affects your gaming experiences".format(
                 fps.fps()
             )
         )
@@ -460,10 +480,10 @@ if __name__ == "__main__":
         help="Whether to update colour range for video tracking or not. If it's  not provided, defaults values to track blue and red are used",
     )
     ap.add_argument(
-        "-m",
-        "--multi_threaded_video_stream",
-        action='store_false',
-        help="Use imutil package to speed up video stream. If it's  not provided, default setting use openCV VideoCapture",
+        "-o",
+        "--openCV_VideoCapture_off",
+        action='store_true',
+        help="Default setting uses imutil package to speed up video stream. You can turn that off and see how fast openCV VideoCapture interacts with the game.",
     )
     ap.add_argument(
         "-v",
