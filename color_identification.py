@@ -20,14 +20,15 @@ Repeat the same procedure for the second colour.
 
 def hsv_color_range():
     cap = cv2.VideoCapture(0)
+    trackbar_title="Press Q to save the values & exit"
 
-    cv2.namedWindow("Trackbars")
+    cv2.namedWindow(trackbar_title)
     trackbar_names = ["L - H", "L - S", "L - V", "U - H", "U - S", "U - V"]
     default_values = [0, 0, 0, 179, 255, 255]
 
     for name, default_value in zip(trackbar_names, default_values):
         cv2.createTrackbar(
-            name, "Trackbars", default_value, 179 if "H" in name else 255, nothing
+            name, trackbar_title, default_value, 179 if "H" in name else 255, nothing
         )
 
     while True:
@@ -38,10 +39,10 @@ def hsv_color_range():
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         lower_range = np.array(
-            [cv2.getTrackbarPos(name, "Trackbars") for name in trackbar_names[:3]]
+            [cv2.getTrackbarPos(name, trackbar_title) for name in trackbar_names[:3]]
         )
         upper_range = np.array(
-            [cv2.getTrackbarPos(name, "Trackbars") for name in trackbar_names[3:]]
+            [cv2.getTrackbarPos(name, trackbar_title) for name in trackbar_names[3:]]
         )
         mask = cv2.inRange(hsv, lower_range, upper_range)
         result = cv2.bitwise_and(frame, frame, mask=mask)

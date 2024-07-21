@@ -7,6 +7,35 @@ from color_identification import hsv_color_range
 from imutils.video import WebcamVideoStream
 from imutils.video import FPS
 import imutils
+'''
+In total, there are 3 modes in this game, PC vs. PC (observer_mode), Player vs. PC (single_player), Player vs. Player and different way of controlling the strikers.
+To enter a specific mode, you need to give the argument in the Terminal or Cmd when calling the game.
+For example, 
+entering observer mode to watch PC vs. PC
+python pong_game.py -o
+
+entering observer mode to watch PC vs. PC hitting two balls
+python pong_game.py -o -b
+
+entering single-player mode and control the striker with keyboard
+python pong_game.py -s
+
+entering single-player mode and control the striker with computer vision
+python pong_game.py -s -c
+
+entering double-player mode and update pygram refresh rate (for example, 60 frame per second)
+python pong_game.py -f 60
+
+When using computer vision to control the striker(s), there are two more arguments you can play around  
+
+If you want to update the colour spectrum for colour tracking (in single, computer-vision mode)
+python pong_game.py -s -c -u
+
+If you want to set baseline values based on the first image of the software for colour tracking (in double, computer-vision mode)
+python pong_game.py -c -v
+
+For more details, check out the bottom of this code or use -h to ask for help on the Cmd or Terminal
+'''
 
 pygame.init()
 
@@ -25,8 +54,7 @@ RED = pygame.Color(255, 0, 0)
 # Font that is used to render the text
 font20 = pygame.font.Font("freesansbold.ttf", 20)
 
-pts = deque(maxlen=10)
-
+rolling_average_buffer = deque(maxlen=10)#rolling average butter
 
 class Striker:
     def __init__(self, posx, posy, width, height, speed, color):
@@ -131,7 +159,6 @@ def keyboard_controller(event, pygame):
 
 ## this method updates the position of striker based on ball's position
 
-
 def AI_controller(ball, striker):
     y_fac = 0
     buffer_distance = 10
@@ -142,10 +169,8 @@ def AI_controller(ball, striker):
 
     return y_fac
 
-
 ## this method is an advanced from the first one. Calculate the distance of balls and the striker and focus on the ball that nearer the striker
 ## balls class and striker class
-
 
 def AI_controller_2balls(ball1, ball2, striker):
     y_fac = 0
@@ -195,31 +220,35 @@ def color_track(img, lower_range, upper_range):
     mask = cv2.inRange(hsv, lower_range, upper_range)
     _, mask1 = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
     cnts, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    print(cnts)
     OutArea = [cv2.contourArea(c) for c in cnts if cv2.contourArea(c) > min_area and cv2.contourArea(c) < max_area]
     num_cnt = len(OutArea)
     area = sum(OutArea)
 
     return num_cnt, area
 
-
-def camera_controller_no_baseline(track1, track2):
-    y_fac = max(-1, min(1, track2 - track1))
-    return [y_fac]
-
-
-def camera_controller_baseline(track1, track2, track1_init, track2_init):
-    control_one=True
-    avg_track_list = [0, 0]
-    pts.appendleft((int(track1), int(track2)))
-    avg_track_list = np.nanmean(pts, axis=0)
-    track2_diff=avg_track_list[1] - track2_init
-    track1_diff=avg_track_list[0] - track1_init
-    if control_one:
-        y_fac = max(-1, min(1, track2_diff - track1_diff)) 
-        y_fac2=0
+def camera_controller(track1, track2, track1_init=None, track2_init=None):
+    if track1_init is None or track2_init is None:
+        if game_modes.single_player:
+            y_fac = max(-1, min(1, track2 - track1))#compare the absolute size or area of two stream and rescale the difference in between 1 and -1
+            y_fac2=0 #this value is not used later on in single player mode
+        else:
+            target1=100#needs to set arbitrary values so that the two tracks know what to compare with
+            target2=200
+            y_fac = max(-1, min(1, track1 -target1))
+            y_fac2 = max(-1, min(1, track2 -target2))    
     else:
-        y_fac = max(-1, min(1, avg_track_list[0] - track1_init))
-        y_fac2 = max(-1, min(1, avg_track_list[1] - track2_init))
+        avg_track_list = [0, 0]
+        rolling_average_buffer.appendleft((int(track1), int(track2)))#save the incoming data stream into a buffer so that we can take the mean of them and output noise-robust data stream
+        avg_track_list = np.nanmean(rolling_average_buffer, axis=0)       
+        if game_modes.single_player:
+            track1_diff=avg_track_list[0] - track1_init
+            track2_diff=avg_track_list[1] - track2_init
+            y_fac = max(-1, min(1, track2_diff - track1_diff))#compare the difference in changes of two stream and rescale the difference in between 1 and -1
+            y_fac2=0 #this value is not used later on in single player mode
+        else:
+            y_fac = max(-1, min(1, avg_track_list[0] - track1_init))#compare the difference the current value and its own initial value and rescale the difference in between 1 and -1
+            y_fac2 = max(-1, min(1, avg_track_list[1] - track2_init))
     return [y_fac, y_fac2]
 
 
@@ -237,9 +266,6 @@ def main(game_modes):
 
 
     if game_modes.play_with_camera:
-        cap = WebcamVideoStream(src=0).start()
-        fps = FPS().start()
-        pygame.display.set_caption("Pong game with camera: Close this window or press ESC to end the game")
         if game_modes.update_color_range:
             print("Controlling the Striker with your camera")
             print(
@@ -266,17 +292,18 @@ def main(game_modes):
             print(
                 f"[INFO] Use default colour thresholds. The first colour range is for blue and the second one is for red"
             )
-    elif game_modes.demo_mode:
-        pygame.display.set_caption("Pong game demo: 2 PC players are playing against each others. Close this window or press ESC to end the game")
+        cap = WebcamVideoStream(src=0).start()
+        fps = FPS().start()
+        pygame.display.set_caption("Pong game with camera: Close this window or press ESC to end the game")
+
+    elif game_modes.observer_mode:
+        pygame.display.set_caption("Pong game Observer mode: 2 PC players are playing against each others. Close this window or press ESC to end the game")
         print(
-            "[INFO] Welcome to demo or PC mode. Here, 2 PC players are playing against each others. You can change how 1 PC player responds to the ball(s) and compare what would be the best strategy to play this game."
+            "[INFO] Welcome to Observer mode. Here, 2 PC players are playing against each others. You can change how 1 PC player responds to the ball(s) and compare what would be the best strategy to play this game."
         )
     else:
         pygame.display.set_caption("Pong game with keyboard: Up and Down are for player 1 (the right striker). Close this window or press ESC to end the game")
         print("Controlling the Striker with the keyboard. Use Up and Down to control player 1 (the right striker's movement). RIGHT and LEFT button are set to control the second player's movement (the left striker) by default, if player 2 is available")
-        print(
-            "[INFO] Welcome to demo or PC mode. Here, 2 PC players are playing against each others. You can change how 1 PC player responds to the ball(s) and compare what would be the best strategy to play this game."
-        )
 
 
     list_of_strikers = [strikerL, strikerR]
@@ -286,13 +313,14 @@ def main(game_modes):
     area2_init = 0
     while running:
         screen.fill(BLACK)
-        if game_modes.demo_mode:
+        if game_modes.observer_mode:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
+            # telling the PC(s) how to play this game
             if game_modes.two_balls:
                 strikerL_y_fac = AI_controller_2balls(ball, ball2, strikerL)
                 strikerR_y_fac = AI_controller_2balls(ball, ball2, strikerR)
@@ -307,7 +335,7 @@ def main(game_modes):
             # do colour tracking here
             num_1, area_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
             num_2, area_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
-            # do save initial value of area size or whatever you want to compare
+            # save initial value of area size or whatever you want to compare
             if counter == 0:
                 area1_init = area_1
                 area2_init = area_2
@@ -321,54 +349,50 @@ def main(game_modes):
             # entering controlling striker section
             if game_modes.single_player == True:
                 if game_modes.use_baseline_value == True:
-                    y_list = camera_controller_baseline(
-                        area_1, area_2, area1_init, area2_init
+                    y_list = camera_controller(
+                        area_1, area_2, area1_init, area2_init#comparing area1 and area2 to control the two strikers.
                     )
                 else:
-                    y_list = camera_controller_no_baseline(num_1, num_2)
+                    y_list = camera_controller(num_1, num_2)##this is the mode used in the demo, comparing the number of two cards and decide to striker R to move up or down
 
                 strikerR_y_fac = y_list[0]
-                # AI PC
+                # telling the PC how to play this game
                 if game_modes.two_balls:
                     strikerL_y_fac = AI_controller_2balls(ball, ball2, strikerL)
                 else:
                     strikerL_y_fac = AI_controller(ball, strikerL)
             else:
                 if game_modes.use_baseline_value == True:
-                    y_list = camera_controller_baseline(
+                    y_list = camera_controller(
                         area_1, area_2, area1_init, area2_init
-                    )
+                    )#comparing area1 and area2 with their initial values to control the two strikers.
                 else:
-                    y_list = camera_controller_no_baseline(area_1, area_2)
+                    y_list = camera_controller(area_1, area_2)
+                    print("this is yet developed....One idea is to set a target value (a default value) for the area of two colour to compare")
 
                 strikerR_y_fac = y_list[0]
                 if len(y_list) > 1:
                     strikerL_y_fac = y_list[1]
         else:
-            if game_modes.single_player == True:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
                         running = False
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_ESCAPE:
-                            running = False
-                    y_list = keyboard_controller(event, pygame)
-                    strikerR_y_fac = y_list[0]
+            if game_modes.single_player == True:
+                y_list = keyboard_controller(event, pygame)
+                strikerR_y_fac = y_list[0]
+                # telling the PC how to play this game
                 if game_modes.two_balls:
                     strikerL_y_fac = AI_controller_2balls(ball, ball2, strikerL)
                 else:
                     strikerL_y_fac = AI_controller(ball, strikerL)
             else:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_ESCAPE:
-                            running = False
                     ## there is a bug  in the pygame that when wrapping up in a function, some key press was prioritised by others
-                    y_list = keyboard_controller(event, pygame)
-                    strikerR_y_fac = y_list[0]
-                    strikerL_y_fac = y_list[1]
+                y_list = keyboard_controller(event, pygame)
+                strikerR_y_fac = y_list[0]
+                strikerL_y_fac = y_list[1]
 
         ##update the position of the paddles
         strikerR.update(strikerR_y_fac)
@@ -386,7 +410,7 @@ def main(game_modes):
         ##update the position of the balls
         point1 = ball.update()
         point2 = ball2.update() if game_modes.two_balls else None
-
+        ##scoring rules of the game
         if point1 == -1:
             strikerR_score += 1
         elif point1 == 1:
@@ -397,12 +421,12 @@ def main(game_modes):
                 strikerR_score += 1
             elif point2 == 1:
                 strikerL_score += 1
-
+        ##reset the ball to its initial position after scoring
         if point1:
             ball.reset()
         if game_modes.two_balls and point2:
             ball2.reset()
-
+        ##drawing the balls, scores and strikers
         strikerL.display()
         strikerR.display()
         ball.display()
@@ -413,11 +437,11 @@ def main(game_modes):
         strikerR.display_score(
             "Collective Power : ", strikerR_score, WIDTH - 100, 20, WHITE
         )
-
         pygame.display.update()
         clock.tick(pygame_fps)
         if game_modes.play_with_camera:
             fps.update()
+    ##output streaming information at the end of the game.
     if game_modes.play_with_camera:
         fps.stop()
         cv2.destroyAllWindows()
@@ -446,10 +470,10 @@ if __name__ == "__main__":
         help="Whether to control striker with camera or not. If it's  not provided, keyboard up and down are used",
     )
     ap.add_argument(
-        "-d",
-        "--demo_mode",
+        "-o",
+        "--observer_mode",
         action='store_true',
-        help="Whether to watch two AI play in the demo mode or not. If it's  not provided, initiates the play mode",
+        help="Whether to watch two PC players playing or not. If it's  not provided, initiates the play mode",
     )
     ap.add_argument(
         "-u",
