@@ -1,12 +1,13 @@
 import pygame
 import cv2
 import numpy as np
-from collections import deque
 import argparse
-from color_identification import hsv_color_range
+import imutils
 from imutils.video import WebcamVideoStream
 from imutils.video import FPS
-import imutils
+from color_identification import hsv_color_range
+from collections import deque
+
 '''
 In total, there are 3 modes in this game, PC vs. PC (observer_mode), Player vs. PC (single_player), Player vs. Player and different way of controlling the strikers.
 To enter a specific mode, you need to give the argument in the Terminal or Cmd when calling the game.
@@ -350,8 +351,8 @@ def main(game_modes):
             if game_modes.single_player == True:
                 if game_modes.use_baseline_value == True:
                     y_list = camera_controller(
-                        area_1, area_2, area1_init, area2_init#comparing area1 and area2 to control the two strikers.
-                    )
+                        area_1, area_2, area1_init, area2_init
+                    )#compare the difference in changes of area1 and area2 to control the striker.
                 else:
                     y_list = camera_controller(num_1, num_2)##this is the mode used in the demo, comparing the number of two cards and decide to striker R to move up or down
 
@@ -368,7 +369,7 @@ def main(game_modes):
                     )#comparing area1 and area2 with their initial values to control the two strikers.
                 else:
                     y_list = camera_controller(area_1, area_2)
-                    print("this is yet developed....One idea is to set a target value (a default value) for the area of two colour to compare")
+                    print("this is yet developed....One idea is to set a target value (a default value) for the area of two colour to compare or design rules of moving strikers based on where the centriod of the cards are")
 
                 strikerR_y_fac = y_list[0]
                 if len(y_list) > 1:
