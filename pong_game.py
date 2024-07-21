@@ -230,25 +230,15 @@ def main(game_modes):
     strikerR = Striker(WIDTH - 30, 0, 10, 100, 10, GREEN)
     ball = Ball(WIDTH // 2, HEIGHT // 2, 7, 3, WHITE)
     ball2 = Ball(WIDTH // 2, HEIGHT // 2, 7, 5, RED) if game_modes.two_balls else None
+    if game_modes.pygame_fps:
+        pygame_fps=game_modes.pygame_fps   
+    else:
+        pygame_fps=120 #the default frame per second pygame update its game
+
 
     if game_modes.play_with_camera:
-        print(game_modes.openCV_VideoCapture_off)
-        if game_modes.openCV_VideoCapture_off:
-            cap = WebcamVideoStream(src=0).start()
-            fps = FPS().start()
-            pygame_fps = 60
-            ## you need to manually test this program under demo mode to see how fast multiple threading speeds up the programme.
-            ## And set a reasonable fps for the pygame update rate
-        else:
-            cap = cv2.VideoCapture(1)
-            camera_fps = cap.get(cv2.CAP_PROP_FPS)
-            pygame_fps = camera_fps
-            print(
-                f"[INFO] PYGAME_FPS is tight to how fast openCV takes video with your hardware"
-            )
-    else:
-        pygame_fps = 60
-    if game_modes.play_with_camera:
+        cap = WebcamVideoStream(src=0).start()
+        fps = FPS().start()
         pygame.display.set_caption("Pong game with camera: Close this window or press ESC to end the game")
         if game_modes.update_color_range:
             print("Controlling the Striker with your camera")
@@ -311,17 +301,9 @@ def main(game_modes):
                 strikerR_y_fac = AI_controller(ball, strikerR)
 
         elif game_modes.play_with_camera:
-            # initiate video capture with either openCV or imutils
-            if game_modes.openCV_VideoCapture_off:
-                frame = cap.read()
-                frame = imutils.resize(frame, width=480, height=640)
-            else:
-                ret, frame = cap.read()
-                if not ret:
-                    running = False
-                    break
-                frame = cv2.resize(frame, (640, 480))
-
+            # initiate video capture with imutils
+            frame = cap.read()
+            frame = imutils.resize(frame, width=480, height=640)
             # do colour tracking here
             num_1, area_1 = color_track(frame, lower_ranges[0], upper_ranges[0])
             num_2, area_2 = color_track(frame, lower_ranges[1], upper_ranges[1])
@@ -434,17 +416,13 @@ def main(game_modes):
 
         pygame.display.update()
         clock.tick(pygame_fps)
-        if game_modes.openCV_VideoCapture_off and game_modes.play_with_camera:
+        if game_modes.play_with_camera:
             fps.update()
-    if game_modes.openCV_VideoCapture_off and game_modes.play_with_camera:
+    if game_modes.play_with_camera:
         fps.stop()
         cv2.destroyAllWindows()
         cap.stop()
-        print(
-            "[INFO] Approx. FPS: {:.2f} under multi-threading method. Update the variable PYGAME_FPS with this value in the code and observe how it affects your gaming experiences".format(
-                fps.fps()
-            )
-        )
+        print(f"[INFO] The PYGAME_FPS is {pygame_fps}. However, this camera captures frames at approx. FPS: {fps.fps()}. Try changing the argument PYGAME_FPS from 30, 60, 120, 240, to 1000 and observe how that would affect camera frame rate. Could you explain how the difference between pygame fps and camera frame rate might affect your gaming experience?")
 
 
 if __name__ == "__main__":
@@ -480,15 +458,15 @@ if __name__ == "__main__":
         help="Whether to update colour range for video tracking or not. If it's  not provided, defaults values to track blue and red are used",
     )
     ap.add_argument(
-        "-o",
-        "--openCV_VideoCapture_off",
-        action='store_true',
-        help="Default setting uses imutil package to speed up video stream. You can turn that off and see how fast openCV VideoCapture interacts with the game.",
-    )
-    ap.add_argument(
         "-v",
         "--use_baseline_value",
         action='store_true',
+        help="Use calculating striker movement based on baseline value from the first frame",
+    )
+    ap.add_argument(
+        "-f",
+        "--pygame_fps",
+        type=int,
         help="Use calculating striker movement based on baseline value from the first frame",
     )
     game_modes = ap.parse_args()
