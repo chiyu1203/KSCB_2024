@@ -1,4 +1,5 @@
 import pygame
+import json
 import cv2
 import numpy as np
 import argparse
@@ -7,6 +8,7 @@ from imutils.video import WebcamVideoStream
 from imutils.video import FPS
 from color_identification import hsv_color_range
 from collections import deque
+from pathlib import Path
 
 '''
 In total, there are 3 modes in this game, PC vs. PC (observer_mode), Player vs. PC (single_player), Player vs. Player and different way of controlling the strikers.
@@ -267,32 +269,26 @@ def main(game_modes):
 
 
     if game_modes.play_with_camera:
-        if game_modes.update_color_range:
-            print("Controlling the Striker with your camera")
+        print("Controlling the Striker with your camera")
+        colour_profile = Path('color_ranges.json')
+        if colour_profile.is_file()==False or game_modes.update_color_range:
+          
             print(
-            "[INFO] colour identification: use mouse cursor to adjust lower and upper bound of the threshold to isolate color spectrum. Isolated color will be shown as white in the Mask window. Press Q to return the result and leave this procedure"
+            "[INFO] colour identification: use mouse cursor to adjust lower and upper bound of the threshold to isolate color spectrum. Isolated color will be shown as white in the Mask window. Press S to save and Q to exit"
         )
-            lower_blue, upper_blue = hsv_color_range()
-            print(f"[INFO] Colour 1 is in between {lower_blue} and {upper_blue}")
-            lower_red, upper_red = hsv_color_range()
-            print(f"[INFO] Colour 2 is in between {lower_red} and {upper_red}")
-            lower_ranges = [np.array(lower_blue), np.array(lower_red)]
-            upper_ranges = [np.array(upper_blue), np.array(upper_red)]
-            print(f"[INFO] Complete updating the colour thresholds")
-
+            hsv_color_range()
+            print(f"[INFO] Complete updating the colour thresholds in the colour profile and use the new colour profile")
         else:
-                    ## setting for logitech webcam
-        #lower_ranges = [np.array([90, 31, 229]), np.array([0, 62, 78])]
-        #upper_ranges = [np.array([179, 255, 255]), np.array([91, 255, 255])]
-            lower_ranges = [np.array([34, 74, 78]), np.array([30, 49,85])]
-            upper_ranges = [np.array([154, 170, 255]), np.array([141, 130, 255])]
-        ## setting for build-in webcam
-        # lower_ranges = [np.array([72, 98, 64]), np.array([129, 106, 62])]
-        # upper_ranges = [np.array([131, 255, 255]), np.array([179, 255, 255])]
-            print("Controlling the Striker with your camera")
-            print(
-                f"[INFO] Use default colour thresholds. The first colour range is for blue and the second one is for red"
+            print(f"[INFO] Use the existing colour profile.")
+        
+        print(
+                f"[INFO] Load colour thresholds from colour profile. The default colour range is for blue and the second one is for red"
             )
+        with open('color_ranges.json', 'r') as jsonfile:
+            data = json.load(jsonfile)
+        #Setting up camera streamming
+        lower_ranges = [np.array(data[0].get('lower_range')), np.array(data[1].get('lower_range'))]
+        upper_ranges = [np.array(data[0].get('upper_range')), np.array(data[1].get('upper_range'))]
         cap = WebcamVideoStream(src=0).start()
         fps = FPS().start()
         pygame.display.set_caption("Pong game with camera: Close this window or press ESC to end the game")

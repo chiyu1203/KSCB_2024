@@ -1,5 +1,8 @@
 import numpy as np
 import cv2
+import json
+from pathlib import Path
+
 
 """
 Color identification: In this tutorial, we use colour-based tracking to identify objects of interest as this is an rather simple but robust (with limitation) method to demonstrate vision-based closed-loop experiments
@@ -11,16 +14,16 @@ Adjust lower and upper bound of the HSV threshold with the mouse cursor to isola
 Once you start to tune these bounds, have a look on the mask window and see what is isolated.
 
 Isolated color will be shown in the mask and result.
-
-Press Q to save the result and leave this procedure.
+Press S to save the values of colour range.
 Repeat the same procedure for the second colour.
+Press Q to leave this procedure.
 
 """
 
 
 def hsv_color_range():
     cap = cv2.VideoCapture(0)
-    trackbar_title="Press Q to save the values & exit"
+    trackbar_title="Press S to save and Q to exit"
 
     cv2.namedWindow(trackbar_title)
     trackbar_names = ["L - H", "L - S", "L - V", "U - H", "U - S", "U - V"]
@@ -52,6 +55,32 @@ def hsv_color_range():
         cv2.imshow("raw video + mask", result)
 
         key = cv2.waitKey(1)
+        if key == ord("s"):
+            # with open('color_ranges.csv', 'w', newline='') as csvfile:
+            #     csvwriter = csv.writer(csvfile)
+            #     csvwriter.writerow(["Lower H", "Lower S", "Lower V", "Upper H", "Upper S", "Upper V"])
+            #     csvwriter.writerow(np.concatenate((lower_range, upper_range)))
+            # color_ranges = {
+            #     "lower_range": lower_range.tolist(),
+            #     "upper_range": upper_range.tolist()
+            # }
+            color_ranges = {
+                "lower_range": lower_range.tolist(),
+                "upper_range": upper_range.tolist()
+            }
+            colour_profile = Path('color_ranges.json')
+            if colour_profile.is_file():
+                with open('color_ranges.json', 'r') as jsonfile:
+                    data = json.load(jsonfile)
+                    if not isinstance(data, list):
+                        data = [data]
+            else:
+                data = []
+
+            data.append(color_ranges)
+
+            with open('color_ranges.json', 'w') as jsonfile:
+                json.dump(data, jsonfile, indent=4)
         if key == ord("q"):
             break
 
