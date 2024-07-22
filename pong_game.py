@@ -215,6 +215,8 @@ def AI_controller_2balls(ball1, ball2, striker):
 ## use openCV packages to identify particular colour
 ## input: frame, colour range, output: detected the area size and number of the detected contour
 def color_track(img, lower_range, upper_range):
+    ## based on the size of area you saw when identifying right colour for tracking
+    ## set a reasonable range of "min_area" and "max_area" here to isolate the right contour.
     min_area = 30
     max_area =300
     num_cnt = 0
@@ -229,27 +231,27 @@ def color_track(img, lower_range, upper_range):
 
     return num_cnt, area
 
-def camera_controller(track1, track2, track1_init=None, track2_init=None):
-    if track1_init is None or track2_init is None:
+def camera_controller(colour1, track2, colour1_init=None, track2_init=None):
+    if colour1_init is None or track2_init is None:
         if game_modes.single_player:
-            y_fac = max(-1, min(1, track2 - track1))#compare the absolute size or area of two stream and rescale the difference in between 1 and -1
+            y_fac = max(-1, min(1, track2 - colour1))#compare the absolute size or area of two stream and rescale the difference in between 1 and -1
             y_fac2=0 #this value is not used later on in single player mode
         else:
             target1=100#needs to set arbitrary values so that the two tracks know what to compare with
             target2=200
-            y_fac = max(-1, min(1, track1 -target1))
+            y_fac = max(-1, min(1, colour1 -target1))
             y_fac2 = max(-1, min(1, track2 -target2))    
     else:
         avg_track_list = [0, 0]
-        rolling_average_buffer.appendleft((int(track1), int(track2)))#save the incoming data stream into a buffer so that we can take the mean of them and output noise-robust data stream
+        rolling_average_buffer.appendleft((int(colour1), int(track2)))#save the incoming data stream into a buffer so that we can take the mean of them and output noise-robust data stream
         avg_track_list = np.nanmean(rolling_average_buffer, axis=0)       
         if game_modes.single_player:
-            track1_diff=avg_track_list[0] - track1_init
+            colour1_diff=avg_track_list[0] - colour1_init
             track2_diff=avg_track_list[1] - track2_init
-            y_fac = max(-1, min(1, track2_diff - track1_diff))#compare the difference in changes of two stream and rescale the difference in between 1 and -1
+            y_fac = max(-1, min(1, track2_diff - colour1_diff))#compare the difference in changes of two stream and rescale the difference in between 1 and -1
             y_fac2=0 #this value is not used later on in single player mode
         else:
-            y_fac = max(-1, min(1, avg_track_list[0] - track1_init))#compare the difference the current value and its own initial value and rescale the difference in between 1 and -1
+            y_fac = max(-1, min(1, avg_track_list[0] - colour1_init))#compare the difference the current value and its own initial value and rescale the difference in between 1 and -1
             y_fac2 = max(-1, min(1, avg_track_list[1] - track2_init))
     return [y_fac, y_fac2]
 
@@ -281,7 +283,7 @@ def main(game_modes):
             print(f"[INFO] Use the existing colour profile.")
         
         print(
-                f"[INFO] Load colour thresholds from colour profile. The default colour range is for blue and the second one is for red"
+                f"[INFO] Load colour thresholds from colour profile. The default colour is purple as colour1 and green as colour2"
             )
         with open('color_ranges.json', 'r') as jsonfile:
             data = json.load(jsonfile)

@@ -22,6 +22,7 @@ Press Q to leave this procedure.
 
 
 def hsv_color_range():
+    counter=0
     cap = cv2.VideoCapture(0)
     trackbar_title="Key S to save & Q to ESC"
 
@@ -44,6 +45,8 @@ def hsv_color_range():
         frame = cv2.resize(frame, (640, 480))
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
+
+
         lower_range = np.array(
             [cv2.getTrackbarPos(name, trackbar_title) for name in trackbar_names[:3]]
         )
@@ -52,21 +55,22 @@ def hsv_color_range():
         )
         mask = cv2.inRange(hsv, lower_range, upper_range)
         result = cv2.bitwise_and(frame, frame, mask=mask)
+        _, mask1 = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
+        cnts, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        OutArea = [cv2.contourArea(c) for c in cnts]
+        num_cnt = len(OutArea)
+        area = sum(OutArea)
+        ct_reminder=counter%10
+        if ct_reminder==1:
+            print(f"Size: {area} and Number: {num_cnt} of the area in that colour")
 
         # show thresholded image
         cv2.imshow("mask", mask)
         cv2.imshow("raw video + mask", result)
+        counter=counter+1
 
         key = cv2.waitKey(1)
         if key == ord("s"):
-            # with open('color_ranges.csv', 'w', newline='') as csvfile:
-            #     csvwriter = csv.writer(csvfile)
-            #     csvwriter.writerow(["Lower H", "Lower S", "Lower V", "Upper H", "Upper S", "Upper V"])
-            #     csvwriter.writerow(np.concatenate((lower_range, upper_range)))
-            # color_ranges = {
-            #     "lower_range": lower_range.tolist(),
-            #     "upper_range": upper_range.tolist()
-            # }
             color_ranges = {
                 "lower_range": lower_range.tolist(),
                 "upper_range": upper_range.tolist()
