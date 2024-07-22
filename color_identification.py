@@ -23,11 +23,14 @@ Press Q to leave this procedure.
 
 def hsv_color_range():
     cap = cv2.VideoCapture(0)
-    trackbar_title="Press S to save and Q to exit"
+    trackbar_title="Key S to save & Q to ESC"
 
     cv2.namedWindow(trackbar_title)
     trackbar_names = ["L - H", "L - S", "L - V", "U - H", "U - S", "U - V"]
     default_values = [0, 0, 0, 179, 255, 255]
+
+    colour_profile = Path('color_ranges.json')
+    colour_profile.unlink(missing_ok=True)
 
     for name, default_value in zip(trackbar_names, default_values):
         cv2.createTrackbar(
@@ -78,6 +81,7 @@ def hsv_color_range():
                 data = []
 
             data.append(color_ranges)
+            print(f"save colour profile {colour_profile} to json file")
 
             with open('color_ranges.json', 'w') as jsonfile:
                 json.dump(data, jsonfile, indent=4)

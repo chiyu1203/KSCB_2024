@@ -223,7 +223,6 @@ def color_track(img, lower_range, upper_range):
     mask = cv2.inRange(hsv, lower_range, upper_range)
     _, mask1 = cv2.threshold(mask, 254, 255, cv2.THRESH_BINARY)
     cnts, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    print(cnts)
     OutArea = [cv2.contourArea(c) for c in cnts if cv2.contourArea(c) > min_area and cv2.contourArea(c) < max_area]
     num_cnt = len(OutArea)
     area = sum(OutArea)

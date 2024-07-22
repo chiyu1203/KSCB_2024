@@ -9,7 +9,23 @@ https://pysource.com/2018/01/31/object-detection-using-hsv-color-space-opencv-3-
 And some additional function in the notebook is listed here:
 https://pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
 
-General anaconda environment for all setups and data analyses (you can skip this if you do not want to use conda virutal environment)
+In this tutorial, you will use the following files in the repo frequently to test the code and practice coding.
+
+pong_game.py
+This is the main script run the game and play with different mode (arguments) in the game.
+
+color_identification.py
+This is made to isolate specific colour spectrum, which faciliates colour tracking
+
+color_ranges.json
+This is made to store the colour profile from color_identification.py and is used in pong_game.py
+
+tutorial.ipynb
+This is for you to practice coding and finish interesting tasks designed in the tutorial.
+If you have a favourite python IDE (such as pycharm, spyder, VS code), feel free to test your tutorial.ipynb there
+
+
+To set up python environment, I use anaconda and below is the instruction to install dependencies in a conda virtual environment (skip the basic step and just install dependencies via pip if you do not want to use conda environment)
 
 Install the latest anaconda version for your operating system (https://www.anaconda.com/products/individual).
 
@@ -34,13 +50,3 @@ Install dependencies via pip
 ```
 pip install pygame opencv-python notebook imutils
 ```
-Optional package (in case you want to plot some outputs):
-```
-pip install matplotlib
-```
-
-
-If you have a favourite python IDE (such as pycharm, spyder, VS code), use that to test your code and only use jupyter notebook to look up what the next practice is about.
-
-
-If you want to use jupyter notebook or anything similiar to code, note that the nature of running seperate cells on notebook may return error: display Surface quit if you repeat the same main function without initiating Pygame modules. This is likely due to pygame.quit() uninitialize all PyGame modules at the end of the main function to close the display. One way to circuvment this error is to initiating Pygame module each time when running the main function. Therefore I have changed the structure of the demo code to match that matter on the jupyter notebook. The other way to circuvment this error is to go to Run > Run All Cells, each time when testing the cells on the notebook. This also mean that you need to commend out old cells or not call them to ensure they are not executed.
