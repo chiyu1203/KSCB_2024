@@ -9,11 +9,19 @@ https://pysource.com/2018/01/31/object-detection-using-hsv-color-space-opencv-3-
 And some additional function in the notebook is listed here:
 https://pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
 
-General anaconda environment for all setups and data analyses
+General anaconda environment for all setups and data analyses (you can skip this if you do not want to use conda virutal environment)
 
 Install the latest anaconda version for your operating system (https://www.anaconda.com/products/individual).
 
-Open the anaconda prompt and create a virtual environment via conda
+Open the anaconda prompt and create a virtual environment via conda 
+
+Create the virtual environment with the environment.yml file
+
+```
+conda create --name kscb_2024 -f environment.yml
+```
+
+or type in the following command.
 
 ```
 conda create --name kscb_2024 --channel conda-forge python=3.11
