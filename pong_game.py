@@ -105,7 +105,7 @@ class Ball:
         self.ball = pygame.draw.circle(
             screen, self.color, (self.posx, self.posy), self.radius
         )
-        self.first_time = True
+        self.infield = True
 
     def display(self):
         self.ball = pygame.draw.circle(
@@ -119,11 +119,11 @@ class Ball:
         if self.posy <= 0 or self.posy >= HEIGHT:
             self.y_fac *= -1
 
-        if self.posx <= 0 and self.first_time:
-            self.first_time = False
+        if self.posx <= 0 and self.infield:
+            self.infield = False
             return -1
-        elif self.posx >= WIDTH and self.first_time:
-            self.first_time = False
+        elif self.posx >= WIDTH and self.infield:
+            self.infield = False
             return 1
         else:
             return 0
@@ -132,7 +132,7 @@ class Ball:
         self.posx = WIDTH // 2
         self.posy = HEIGHT // 2
         self.x_fac *= -1
-        self.first_time = True
+        self.infield = True
 
     def hit(self):
         self.x_fac *= -1
