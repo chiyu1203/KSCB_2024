@@ -41,12 +41,8 @@ or type in the following commands.
 
 ```
 conda create --name kscb_2024 --channel conda-forge python=3.11
-```
-Activate the virtual environment
-```
+
 conda activate kscb_2024
-```
-Install dependencies via pip 
-```
+
 pip install pygame opencv-python notebook imutils
 ```
