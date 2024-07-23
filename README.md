@@ -56,3 +56,5 @@ or
 python pong_game.py -s
 ```
 to get some favour of the game before moving on to use computer vision to control the striker. For more information, check out 'pong_game.py' or 'tutorial.ipynb'
+
+FEEDBACK FROM The tutorial 2024: be aware of cross-platform issue with Mac, would be good to create a camera-view mode together with the game so that students note what is detected
