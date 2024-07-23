@@ -217,7 +217,7 @@ def AI_controller_2balls(ball1, ball2, striker):
 def color_track(img, lower_range, upper_range):
     ## based on the size of area you saw when identifying right colour for tracking
     ## set a reasonable range of "min_area" and "max_area" here to isolate the right contour.
-    min_area = 30
+    min_area = 10
     max_area =300
     num_cnt = 0
     area = 0
